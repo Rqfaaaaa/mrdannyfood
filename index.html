@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mr Danny Food · Menú y pedidos</title>
+  <meta name="description" content="Menú de Mr Danny Food en Valledupar. Arma tu pedido y envíalo por WhatsApp.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Encabezado: nombre, estado (abierto/cerrado) y horario -->
+  <header class="hero">
+    <div class="hero__inner">
+      <h1 class="hero__title">Mr Danny <span>Food</span></h1>
+      <p class="hero__text">Hamburguesas, salchipapas, chuzos y perros. Arma tu pedido y envíalo por WhatsApp.</p>
+      <p id="estado" class="estado" role="status"></p>
+    </div>
+    <div class="mantel" aria-hidden="true"></div>
+  </header>
+
+  <!-- Categorías (se llenan desde menu.json) -->
+  <nav id="categorias" class="categorias" aria-label="Categorías del menú"></nav>
+
+  <!-- Menú (se llena desde menu.json) -->
+  <main id="menu" class="menu">
+    <p class="cargando">Cargando el menú…</p>
+  </main>
+
+  <footer class="pie" id="pie"></footer>
+
+  <!-- Barra inferior del carrito -->
+  <button id="barraCarrito" class="barra-carrito" hidden>
+    <span id="barraCantidad" class="barra-carrito__cant">0</span>
+    <span>Ver mi pedido</span>
+    <strong id="barraTotal">$0</strong>
+  </button>
+
+  <!-- Ventana: elegir un producto (cantidad, adicionales, nota) -->
+  <dialog id="dlgProducto" class="hoja" aria-labelledby="prodNombre">
+    <div class="hoja__cabeza">
+      <h2 id="prodNombre"></h2>
+      <button class="cerrar" data-cerrar aria-label="Cerrar">✕</button>
+    </div>
+    <p id="prodDescripcion" class="hoja__desc"></p>
+    <div id="prodExtras"></div>
+    <label class="campo">
+      <span>Nota para la cocina</span>
+      <input id="prodNota" type="text" maxlength="120" placeholder="Ej: sin cebolla">
+    </label>
+    <div class="hoja__pie">
+      <div class="cantidad">
+        <button id="prodMenos" aria-label="Quitar uno">−</button>
+        <output id="prodCant">1</output>
+        <button id="prodMas" aria-label="Agregar uno">+</button>
+      </div>
+      <button id="prodAgregar" class="boton"></button>
+    </div>
+  </dialog>
+
+  <!-- Ventana: mi pedido (carrito + datos + enviar por WhatsApp) -->
+  <dialog id="dlgCarrito" class="hoja" aria-labelledby="carTitulo">
+    <div class="hoja__cabeza">
+      <h2 id="carTitulo">Mi pedido</h2>
+      <button class="cerrar" data-cerrar aria-label="Cerrar">✕</button>
+    </div>
+
+    <div id="carLista"></div>
+
+    <form id="formPedido" novalidate>
+      <fieldset class="campo">
+        <legend>¿Cómo quieres tu pedido?</legend>
+        <div class="opciones">
+          <label><input type="radio" name="modalidad" value="mesa" checked> En el restaurante</label>
+          <label><input type="radio" name="modalidad" value="domicilio"> Domicilio</label>
+          <label><input type="radio" name="modalidad" value="llevar"> Para llevar</label>
+        </div>
+      </fieldset>
+
+      <label class="campo">
+        <span>Tu nombre</span>
+        <input id="fNombre" type="text" autocomplete="name" required>
+      </label>
+
+      <label class="campo" id="campoMesa">
+        <span>Número de mesa</span>
+        <input id="fMesa" type="text" inputmode="numeric">
+      </label>
+
+      <label class="campo" id="campoDireccion" hidden>
+        <span>Dirección de entrega</span>
+        <input id="fDireccion" type="text" autocomplete="street-address">
+      </label>
+
+      <fieldset class="campo">
+        <legend>Forma de pago</legend>
+        <div class="opciones">
+          <label><input type="radio" name="pago" value="Efectivo" checked> Efectivo</label>
+          <label><input type="radio" name="pago" value="Transferencia"> Transferencia</label>
+        </div>
+      </fieldset>
+
+      <p id="avisoDomicilio" class="aviso" hidden>El valor del domicilio te lo confirmamos por WhatsApp.</p>
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <div class="total-linea">
+        <span>Total productos</span>
+        <strong id="carTotal">$0</strong>
+      </div>
+
+      <button type="submit" class="boton boton--whatsapp">Enviar pedido por WhatsApp</button>
+      <button type="button" id="vaciar" class="boton-texto">Vaciar pedido</button>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

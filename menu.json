@@ -1,0 +1,124 @@
+{
+  "negocio": {
+    "nombre": "Mr Danny Food",
+    "instagram": "@mr.dannyfood",
+    "whatsapp": "573106721233",
+    "direccion": "MZ 178 CS 19 - Don Alberto, Valledupar",
+    "horario": "Miércoles a domingo (festivos), 6:30 PM a 11:00 PM",
+    "moneda": "COP"
+  },
+  "categorias": [
+    {
+      "id": "burgers",
+      "nombre": "Burgers",
+      "nota": "Todas vienen acompañadas de papas a la francesa y pan artesanal.",
+      "productos": [
+        { "id": "burger-clasica", "nombre": "Burger Clásica", "descripcion": "Pan artesanal, 150 g de carne de la casa, queso mozzarella, tomate, lechuga romana, cebolla caramelizada, salsa tártara y salsa BBQ", "precio": 25000 },
+        { "id": "burger-especial", "nombre": "Burger Especial", "descripcion": "Pan artesanal, 150 g de carne de la casa, pechuga, tocineta, queso mozzarella, tomate, lechuga romana, cebolla caramelizada, salsa tártara y salsa BBQ", "precio": 30000 },
+        { "id": "burger-beacon", "nombre": "Burger Beacon", "descripcion": "Pan artesanal, 150 g de carne de la casa, tocineta ahumada, queso cheddar, tomate, lechuga romana, cebolla caramelizada, salsa tártara y salsa BBQ", "precio": 30000 },
+        { "id": "burger-doble-carne", "nombre": "Burger Doble Carne", "descripcion": "Pan artesanal, 300g de carne de la casa, queso cheddar, tomate, lechuga romana, cebolla caramelizada, salsa tártara y salsa BBQ", "precio": 35000 }
+      ]
+    },
+    {
+      "id": "salchipapa-mr-danny",
+      "nombre": "Salchipapa Mr Danny",
+      "nota": "Papas a la francesa, salchicha ranchera premium, suiza, carne, pechuga, tocineta ahumada, chicharrón, queso asado, maíz tierno y salsa de la casa.",
+      "productos": [
+        { "id": "mrdanny", "nombre": "Mr. Danny", "descripcion": "Porción individual", "precio": 30000 },
+        { "id": "mrdanny-x2", "nombre": "Mr. Danny X2", "descripcion": "Para 2 personas", "precio": 55000 },
+        { "id": "mrdanny-x4", "nombre": "Mr. Danny X4", "descripcion": "Para 4 personas", "precio": 85000 }
+      ]
+    },
+    {
+      "id": "chuzo-desgranado",
+      "nombre": "Chuzo Desgranado",
+      "nota": "Acompañados de papas a la francesa o bollo.",
+      "productos": [
+        { "id": "desgranado-pollo", "nombre": "Desgranado Pollo", "descripcion": "Pollo, queso costeño, lechuga, papa ripio, salsa tártara y piña", "precio": 25000 },
+        { "id": "desgranado-carne", "nombre": "Desgranado Carne", "descripcion": "Carne, queso costeño, lechuga, papa ripio, salsa tártara y piña", "precio": 30000 },
+        { "id": "desgranado-mixto", "nombre": "Desgranado Mixto", "descripcion": "Carne, pechuga, chorizo, butifarra, queso costeño, lechuga, papa ripio, salsa tártara y piña", "precio": 35000 }
+      ]
+    },
+    {
+      "id": "salchipapas",
+      "nombre": "Salchipapas",
+      "nota": "Todas con papas a la francesa, queso costeño, lechuga fresca, maíz tierno, salsa tártara y piña.",
+      "productos": [
+        { "id": "salchipapa-sencilla", "nombre": "Sencilla", "descripcion": "Salchicha manguera premium", "precio": 20000 },
+        { "id": "salchipapa-ranchera", "nombre": "Ranchera", "descripcion": "Salchicha súper ranchera", "precio": 22000 },
+        { "id": "salchipapa-suiza", "nombre": "Suiza", "descripcion": "Salchicha suiza premium", "precio": 24000 },
+        { "id": "salchipapa-especial", "nombre": "Especial", "descripcion": "Salchicha ranchera, salchicha manguera premium, pollo, chorizo y butifarra", "precio": 26000 },
+        { "id": "salchipapa-especial-x2", "nombre": "Especial X2", "descripcion": "Para 2 personas", "precio": 48000 },
+        { "id": "salchipapa-especial-x3", "nombre": "Especial X3", "descripcion": "Para 3 personas", "precio": 64000 },
+        { "id": "salchipapa-especial-x4", "nombre": "Especial X4", "descripcion": "Para 4 personas", "precio": 75000 },
+        { "id": "salchipapa-especial-x6", "nombre": "Especial X6", "descripcion": "Para 6 personas", "precio": 90000 }
+      ]
+    },
+    {
+      "id": "perros",
+      "nombre": "Perros",
+      "nota": "Pan artesanal.",
+      "productos": [
+        { "id": "perro-sencillo", "nombre": "Sencillo", "descripcion": "Salchicha long, queso mozzarella, lechuga, papa ripio y salsa de la casa", "precio": 12000 },
+        { "id": "perro-especial", "nombre": "Especial", "descripcion": "Salchicha long, tocineta ahumada, cebolla caramelizada, queso mozzarella, lechuga, papa ripio y salsa de la casa", "precio": 15000 },
+        { "id": "perro-ranchero-especial", "nombre": "Ranchero Especial", "descripcion": "Salchicha ranchera, cebolla caramelizada, queso mozzarella, lechuga, papa ripio y salsa de la casa", "precio": 17000 },
+        { "id": "perro-suizo", "nombre": "Suizo", "descripcion": "Salchicha suiza, cebolla caramelizada, tocineta ahumada, queso mozzarella, lechuga, papa ripio y salsa de la casa", "precio": 19000 },
+        { "id": "perro-mr-danny", "nombre": "Mr. Danny", "descripcion": "Carne, pechuga, tocineta ahumada, chorizo, butifarra, salcicha ranchera, cebolla caramelizada, queso mozzarella, lechuga, papa ripio y salsa de la casa", "precio": 24000 }
+      ]
+    },
+    {
+      "id": "asados",
+      "nombre": "Asados",
+      "nota": "Con ensalada y acompañante (papas a la francesa, arepa o bollo).",
+      "productos": [
+        { "id": "asado-pechuga", "nombre": "Pechuga Asada", "descripcion": "300 g de pechuga de pollo", "precio": 25000 },
+        { "id": "asado-lomo-cerdo", "nombre": "Lomo de Cerdo", "descripcion": "300 g de lomo de cerdo", "precio": 25000 },
+        { "id": "asado-punta-gorda", "nombre": "Punta Gorda", "descripcion": "300 g de punta gorda", "precio": 35000 }
+      ]
+    },
+    {
+      "id": "menu-infantil",
+      "nombre": "Menú Infantil",
+      "nota": "",
+      "productos": [
+        { "id": "infantil-nuggets", "nombre": "Nuggets de Pollo", "descripcion": "", "precio": 12000 },
+        { "id": "infantil-salchikids", "nombre": "Salchi-Kids", "descripcion": "", "precio": 12000 }
+      ]
+    },
+    {
+      "id": "adicionales",
+      "nombre": "Adicionales",
+      "nota": "Se pueden agregar a cualquier pedido.",
+      "productos": [
+        { "id": "ad-papas", "nombre": "Papas", "descripcion": "", "precio": 6000 },
+        { "id": "ad-arepa", "nombre": "Arepa", "descripcion": "", "precio": 4000 },
+        { "id": "ad-bollo", "nombre": "Bollo", "descripcion": "", "precio": 4000 },
+        { "id": "ad-tocineta", "nombre": "Tocineta", "descripcion": "", "precio": 7000 },
+        { "id": "ad-cebolla", "nombre": "Cebolla", "descripcion": "", "precio": 3000 },
+        { "id": "ad-mozzarella", "nombre": "Queso mozzarella", "descripcion": "", "precio": 4000 },
+        { "id": "ad-cheddar", "nombre": "Queso cheddar", "descripcion": "", "precio": 5000 },
+        { "id": "ad-carne", "nombre": "Carne", "descripcion": "", "precio": 10000 },
+        { "id": "ad-pollo", "nombre": "Pollo", "descripcion": "", "precio": 7000 },
+        { "id": "ad-suiza", "nombre": "Suiza", "descripcion": "", "precio": 10000 },
+        { "id": "ad-ranchera", "nombre": "Ranchera", "descripcion": "", "precio": 8000 }
+      ]
+    },
+    {
+      "id": "bebidas",
+      "nombre": "Bebidas",
+      "productos": [
+        { "id": "beb-agua-600", "nombre": "Agua 600 ml", "descripcion": "", "precio": 3000 },
+        { "id": "beb-coca-400", "nombre": "Coca-Cola 400 ml", "descripcion": "", "precio": 5000 },
+        { "id": "beb-coca-1l", "nombre": "Coca-Cola 1 L", "descripcion": "", "precio": 8000 },
+        { "id": "beb-coca-1500", "nombre": "Coca-Cola 1,5 L", "descripcion": "", "precio": 10000 },
+        { "id": "beb-kola-400", "nombre": "Kola Román 400 ml", "descripcion": "", "precio": 5000 },
+        { "id": "beb-kola-1500", "nombre": "Kola Román 1,5 L", "descripcion": "", "precio": 10000 },
+        { "id": "beb-quatro-400", "nombre": "Quatro 400 ml", "descripcion": "", "precio": 5000 },
+        { "id": "beb-quatro-1500", "nombre": "Quatro 1,5 L", "descripcion": "", "precio": 10000 },
+        { "id": "beb-soda", "nombre": "Soda", "descripcion": "", "precio": 5000 },
+        { "id": "beb-cerveza-nacional", "nombre": "Cerveza nacional", "descripcion": "", "precio": 6000 },
+        { "id": "beb-cerveza-importada", "nombre": "Cerveza importada", "descripcion": "", "precio": 7000 }
+      ]
+    }
+  ]
+}
