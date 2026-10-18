@@ -2,10 +2,11 @@
   "negocio": {
     "nombre": "Mr Danny Food",
     "instagram": "@mr.dannyfood",
-    "whatsapp": "573106721233",
+    "whatsapp": "573054471325",
     "direccion": "MZ 178 CS 19 - Don Alberto, Valledupar",
     "horario": "Miércoles a domingo (festivos), 6:30 PM a 11:00 PM",
-    "moneda": "COP"
+    "moneda": "COP",
+    "datosPago": "Nequi 305 447 1325 a nombre de Mr Danny Food"
   },
   "categorias": [
     {

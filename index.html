@@ -4,42 +4,43 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mr Danny Food · Menú y pedidos</title>
-  <meta name="description" content="Menú de Mr Danny Food en Valledupar. Arma tu pedido y envíalo por WhatsApp.">
+  <meta name="description" content="Menú de Mr Danny Food en Valledupar. Arma tu pedido a domicilio o para llevar.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<!-- data-modo decide qué pantalla es: "cliente" (esta) o "mesero" (mesero.html) -->
+<body data-modo="cliente">
 
-  <!-- Encabezado: nombre, estado (abierto/cerrado) y horario -->
   <header class="hero">
     <div class="hero__inner">
       <h1 class="hero__title">Mr Danny <span>Food</span></h1>
-      <p class="hero__text">Hamburguesas, salchipapas, chuzos y perros. Arma tu pedido y envíalo por WhatsApp.</p>
-      <p id="estado" class="estado" role="status"></p>
+      <p class="hero__text" data-solo="cliente">Hamburguesas, salchipapas, chuzos y perros. Pide a domicilio o para llevar.</p>
+      <p class="hero__text" data-solo="mesero">Modo mesero: toma el pedido de la mesa y envíalo a caja.</p>
+      <p id="estado" class="estado" role="status" data-solo="cliente"></p>
+      <button id="botonMisPedidos" class="boton boton--hero" data-solo="mesero">Mis pedidos <span id="cuentaPedidos" class="tab__cuenta">0</span></button>
+      <a id="enlaceInicio" href="personal.html" class="boton-texto boton-texto--hero" data-solo="mesero" hidden>Cambiar de pantalla</a>
+      <button id="botonSalir" class="boton-texto boton-texto--hero" data-solo="mesero">Cerrar sesión</button>
     </div>
     <div class="mantel" aria-hidden="true"></div>
   </header>
 
-  <!-- Categorías (se llenan desde menu.json) -->
   <nav id="categorias" class="categorias" aria-label="Categorías del menú"></nav>
 
-  <!-- Menú (se llena desde menu.json) -->
   <main id="menu" class="menu">
     <p class="cargando">Cargando el menú…</p>
   </main>
 
   <footer class="pie" id="pie"></footer>
 
-  <!-- Barra inferior del carrito -->
   <button id="barraCarrito" class="barra-carrito" hidden>
     <span id="barraCantidad" class="barra-carrito__cant">0</span>
     <span>Ver mi pedido</span>
     <strong id="barraTotal">$0</strong>
   </button>
 
-  <!-- Ventana: elegir un producto (cantidad, adicionales, nota) -->
+  <!-- Elegir un producto -->
   <dialog id="dlgProducto" class="hoja" aria-labelledby="prodNombre">
     <div class="hoja__cabeza">
       <h2 id="prodNombre"></h2>
@@ -61,41 +62,46 @@
     </div>
   </dialog>
 
-  <!-- Ventana: mi pedido (carrito + datos + enviar por WhatsApp) -->
+  <!-- Mi pedido -->
   <dialog id="dlgCarrito" class="hoja" aria-labelledby="carTitulo">
     <div class="hoja__cabeza">
       <h2 id="carTitulo">Mi pedido</h2>
       <button class="cerrar" data-cerrar aria-label="Cerrar">✕</button>
     </div>
 
+    <p id="avisoEdicion" class="aviso aviso--edicion" data-solo="mesero" hidden></p>
     <div id="carLista"></div>
 
     <form id="formPedido" novalidate>
-      <fieldset class="campo">
+      <fieldset class="campo" data-solo="cliente">
         <legend>¿Cómo quieres tu pedido?</legend>
         <div class="opciones">
-          <label><input type="radio" name="modalidad" value="mesa" checked> En el restaurante</label>
-          <label><input type="radio" name="modalidad" value="domicilio"> Domicilio</label>
+          <label><input type="radio" name="modalidad" value="domicilio" checked> Domicilio</label>
           <label><input type="radio" name="modalidad" value="llevar"> Para llevar</label>
         </div>
       </fieldset>
 
-      <label class="campo">
-        <span>Tu nombre</span>
-        <input id="fNombre" type="text" autocomplete="name" required>
-      </label>
-
-      <label class="campo" id="campoMesa">
+      <label class="campo" data-solo="mesero">
         <span>Número de mesa</span>
-        <input id="fMesa" type="text" inputmode="numeric">
+        <input id="fMesa" type="text" inputmode="numeric" maxlength="10">
       </label>
 
-      <label class="campo" id="campoDireccion" hidden>
+      <label class="campo">
+        <span id="etiquetaNombre">Tu nombre</span>
+        <input id="fNombre" type="text" autocomplete="name" maxlength="60">
+      </label>
+
+      <label class="campo" data-solo="cliente">
+        <span>Teléfono (WhatsApp)</span>
+        <input id="fTelefono" type="tel" autocomplete="tel" maxlength="20" inputmode="tel">
+      </label>
+
+      <label class="campo" id="campoDireccion" data-solo="cliente">
         <span>Dirección de entrega</span>
-        <input id="fDireccion" type="text" autocomplete="street-address">
+        <input id="fDireccion" type="text" autocomplete="street-address" maxlength="160">
       </label>
 
-      <fieldset class="campo">
+      <fieldset class="campo" data-solo="cliente">
         <legend>Forma de pago</legend>
         <div class="opciones">
           <label><input type="radio" name="pago" value="Efectivo" checked> Efectivo</label>
@@ -103,7 +109,12 @@
         </div>
       </fieldset>
 
-      <p id="avisoDomicilio" class="aviso" hidden>El valor del domicilio te lo confirmamos por WhatsApp.</p>
+      <label class="campo" id="campoPagaCon" data-solo="cliente">
+        <span>¿Con cuánto vas a pagar? (opcional, para llevarte el cambio)</span>
+        <input id="fPagaCon" type="text" inputmode="numeric" maxlength="9" placeholder="Ej: 50000">
+      </label>
+
+      <p id="avisoDomicilio" class="aviso" data-solo="cliente"></p>
       <p id="error" class="error" role="alert" hidden></p>
 
       <div class="total-linea">
@@ -111,11 +122,42 @@
         <strong id="carTotal">$0</strong>
       </div>
 
-      <button type="submit" class="boton boton--whatsapp">Enviar pedido por WhatsApp</button>
+      <button type="submit" id="botonEnviar" class="boton boton--whatsapp">Enviar pedido</button>
+      <a id="respaldoWa" class="boton-texto" target="_blank" rel="noopener" data-solo="cliente" hidden>Enviar por WhatsApp en su lugar</a>
+      <button type="button" id="cancelarEdicion" class="boton-texto" data-solo="mesero" hidden>Cancelar edición</button>
       <button type="button" id="vaciar" class="boton-texto">Vaciar pedido</button>
     </form>
   </dialog>
 
-  <script src="app.js"></script>
+  <!-- Mis pedidos de mesa (solo mesero): ver, editar y cancelar -->
+  <dialog id="dlgMisPedidos" class="hoja" data-solo="mesero" aria-labelledby="misTitulo">
+    <div class="hoja__cabeza">
+      <h2 id="misTitulo">Mis pedidos</h2>
+      <button class="cerrar" data-cerrar aria-label="Cerrar">✕</button>
+    </div>
+    <p class="hoja__desc">Pedidos de mesa activos. Toca Editar si el cliente cambia de opinión.</p>
+    <div id="misPedidosLista"></div>
+  </dialog>
+
+  <!-- Pedido enviado -->
+  <dialog id="dlgListo" class="hoja" aria-labelledby="listoTitulo">
+    <h2 id="listoTitulo"></h2>
+    <p id="listoTexto" class="hoja__desc"></p>
+    <a id="listoWa" class="boton boton--whatsapp enlace-boton" target="_blank" rel="noopener" hidden>Escribir al restaurante</a>
+    <button type="button" class="boton-texto" data-cerrar>Cerrar</button>
+  </dialog>
+
+  <!-- Acceso del personal (solo en modo mesero) -->
+  <dialog id="dlgLogin" class="hoja" data-fijo data-solo="mesero" aria-labelledby="loginTitulo">
+    <h2 id="loginTitulo">Acceso del personal</h2>
+    <form id="formLogin">
+      <label class="campo"><span>Correo</span><input id="loginCorreo" type="email" autocomplete="username" required></label>
+      <label class="campo"><span>Contraseña</span><input id="loginClave" type="password" autocomplete="current-password" required></label>
+      <p id="loginError" class="error" role="alert" hidden></p>
+      <button class="boton" style="width:100%">Entrar</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>

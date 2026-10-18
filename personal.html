@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Personal · Mr Danny Food</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="staff">
+
+  <header class="staff__barra">
+    <h1>Mr Danny Food · Personal</h1>
+    <button id="botonSalir" class="boton-texto">Cerrar sesión</button>
+  </header>
+  <div class="mantel" aria-hidden="true"></div>
+
+  <main class="portal">
+    <p id="mensaje" class="portal__mensaje">Inicia sesión para continuar.</p>
+
+    <!-- Solo lo ve el rol "dueño": puede entrar a las dos pantallas -->
+    <div id="destinos" class="destinos" hidden>
+      <a class="destino" href="pedidos.html">
+        <strong>Pedidos y caja</strong>
+        <span>Ver pedidos en vivo, confirmar pagos, imprimir comandas.</span>
+      </a>
+      <a class="destino" href="mesero.html">
+        <strong>Tomar pedido de mesa</strong>
+        <span>El menú con número de mesa, como lo ve el mesero.</span>
+      </a>
+    </div>
+  </main>
+
+  <dialog id="dlgLogin" class="hoja" data-fijo aria-labelledby="loginTitulo">
+    <h2 id="loginTitulo">Acceso del personal</h2>
+    <form id="formLogin">
+      <label class="campo"><span>Correo</span><input id="loginCorreo" type="email" autocomplete="username" required></label>
+      <label class="campo"><span>Contraseña</span><input id="loginClave" type="password" autocomplete="current-password" required></label>
+      <p id="loginError" class="error" role="alert" hidden></p>
+      <button class="boton" style="width:100%">Entrar</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="personal.js"></script>
+</body>
+</html>

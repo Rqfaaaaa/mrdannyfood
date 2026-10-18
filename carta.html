@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carta · Mr Danny Food</title>
+  <meta name="description" content="Carta de Mr Danny Food en Valledupar.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<!-- Carta de solo lectura: es la que va en el QR de las mesas. El pedido lo toma el mesero. -->
+<body data-modo="carta">
+
+  <header class="hero">
+    <div class="hero__inner">
+      <h1 class="hero__title">Mr Danny <span>Food</span></h1>
+      <p class="hero__text">Nuestra carta. Cuando estés listo, díselo a tu mesero y él toma tu pedido.</p>
+      <a class="enlace-domicilio" href="index.html">¿Domicilio o para llevar? Pide aquí</a>
+    </div>
+    <div class="mantel" aria-hidden="true"></div>
+  </header>
+
+  <nav id="categorias" class="categorias" aria-label="Categorías del menú"></nav>
+
+  <main id="menu" class="menu">
+    <p class="cargando">Cargando la carta…</p>
+  </main>
+
+  <footer class="pie" id="pie"></footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

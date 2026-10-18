@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Pedidos · Mr Danny Food</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="staff">
+
+  <header class="staff__barra">
+    <h1>Pedidos</h1>
+    <span id="conexion" class="staff__estado" role="status"></span>
+    <a href="personal.html" class="boton-texto">Inicio</a>
+    <button id="botonSalir" class="boton-texto">Cerrar sesión</button>
+  </header>
+  <div class="mantel" aria-hidden="true"></div>
+
+  <nav id="tabs" class="tabs" aria-label="Filtrar pedidos"></nav>
+
+  <main id="lista" class="lista-pedidos"></main>
+
+  <!-- Acceso del personal -->
+  <dialog id="dlgLogin" class="hoja" data-fijo aria-labelledby="loginTitulo">
+    <h2 id="loginTitulo">Acceso del personal</h2>
+    <form id="formLogin">
+      <label class="campo"><span>Correo</span><input id="loginCorreo" type="email" autocomplete="username" required></label>
+      <label class="campo"><span>Contraseña</span><input id="loginClave" type="password" autocomplete="current-password" required></label>
+      <p id="loginError" class="error" role="alert" hidden></p>
+      <button class="boton" style="width:100%">Entrar</button>
+    </form>
+  </dialog>
+
+  <!-- Comanda para imprimir (solo se ve al imprimir) -->
+  <div id="ticket"></div>
+
+  <script type="module" src="pedidos.js"></script>
+</body>
+</html>

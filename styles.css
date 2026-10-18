@@ -160,7 +160,7 @@ button { cursor: pointer; }
 .campo { display: block; margin: 1rem 0; padding: 0; border: 0; }
 .campo[hidden] { display: none; }
 .campo > span, .campo > legend { display: block; margin-bottom: 0.35rem; font-weight: 700; font-size: 0.92rem; padding: 0; }
-.campo input[type="text"] {
+.campo input:not([type="radio"]):not([type="checkbox"]) {
   width: 100%; padding: 0.7rem 0.8rem;
   background: var(--fondo); border: 1px solid var(--linea); border-radius: 0.6rem;
 }
@@ -197,3 +197,92 @@ button { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 .seccion__cuerpo .producto:last-child { border-bottom: 0; }
+
+/* ===== Elementos nuevos: enlaces como botón, cerrar sesión, ventana de acceso ===== */
+.enlace-boton { display: block; text-align: center; text-decoration: none; color: #000; }
+.boton--whatsapp.enlace-boton { color: #000; }
+a.boton-texto { text-align: center; }
+.boton-texto--hero { margin: 0.8rem 0 0; color: var(--texto-suave); }
+#listoWa { margin-top: 0.5rem; }
+
+/* ===== Pantalla de pedidos (caja) ===== */
+.staff { padding-bottom: 2rem; }
+.staff__barra { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: #000; }
+.staff__barra h1 { font-size: 1.6rem; color: var(--amarillo); margin-right: auto; }
+.staff__estado { font-size: 0.85rem; color: var(--verde-wa); }
+.staff__barra .boton-texto { margin: 0; }
+
+.tabs { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.8rem 1rem; border-bottom: 1px solid var(--linea); position: sticky; top: 0; z-index: 5; background: var(--fondo); }
+.tab { flex: none; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 999px; border: 1px solid var(--linea); background: none; font-weight: 500; }
+.tab.activa { background: var(--amarillo); border-color: var(--amarillo); color: #000; font-weight: 700; }
+.tab.alerta:not(.activa) { border-color: var(--rojo); color: #ff8a7a; }
+.tab__cuenta { min-width: 1.5rem; padding: 0 0.4rem; border-radius: 999px; background: rgba(255,255,255,0.12); font-size: 0.85rem; text-align: center; }
+.tab.activa .tab__cuenta { background: rgba(0,0,0,0.2); }
+
+.lista-pedidos { display: grid; gap: 1rem; padding: 1rem; max-width: 70rem; margin: 0 auto; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); align-items: start; }
+.lista-pedidos .vacio { grid-column: 1 / -1; }
+
+.pedido { background: var(--superficie); border: 1px solid var(--linea); border-left: 5px solid var(--amarillo); border-radius: 0.8rem; padding: 1rem; }
+.pedido--pendiente_pago { border-left-color: var(--rojo); }
+.pedido--listo { border-left-color: var(--verde-wa); }
+.pedido--entregado, .pedido--cancelado { border-left-color: var(--linea); opacity: 0.7; }
+.pedido__cabeza { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.7rem; }
+.pedido__numero { font-family: var(--fuente-titulo); font-size: 1.4rem; font-weight: 400; color: var(--amarillo); }
+.pedido__tipo { font-weight: 700; }
+.pedido__hora { color: var(--texto-suave); font-size: 0.9rem; }
+.pedido__cliente { margin: 0.5rem 0 0; color: var(--texto-suave); font-size: 0.9rem; }
+.pedido__items { list-style: none; margin: 0.8rem 0; padding: 0; }
+.pedido__items li { padding: 0.35rem 0; border-bottom: 1px dashed var(--linea); }
+.pedido__items small { display: block; color: var(--texto-suave); }
+.pedido__items .nota { color: var(--amarillo); }
+.pedido__pie { display: flex; justify-content: space-between; margin: 0.6rem 0; font-size: 0.95rem; }
+.pedido__acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.pedido__acciones .boton { flex: 1 1 auto; padding: 0.65rem 0.9rem; font-size: 0.95rem; }
+.pedido__acciones .boton-texto { margin: 0; }
+.boton--suave { background: var(--linea); color: var(--texto); }
+
+.etiqueta { margin-left: auto; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; background: var(--linea); }
+.etiqueta--pendiente_pago { background: var(--rojo); color: #fff; }
+.etiqueta--confirmado, .etiqueta--preparando { background: var(--amarillo); color: #000; }
+.etiqueta--listo { background: var(--verde-wa); color: #000; }
+
+/* ===== Comanda impresa (papel de 80 mm) ===== */
+#ticket { display: none; }
+@media print {
+  @page { size: 80mm auto; margin: 3mm; }
+  body { background: #fff; color: #000; padding: 0; }
+  body > *:not(#ticket) { display: none !important; }
+  #ticket { display: block; width: 100%; font: 14px/1.35 "Courier New", monospace; color: #000; background: #fff; }
+  #ticket p { margin: 0; }
+  #ticket hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+  #ticket .t-titulo { text-align: center; font-weight: 700; font-size: 16px; }
+  #ticket .t-numero { text-align: center; font-weight: 700; font-size: 30px; line-height: 1.1; }
+  #ticket .t-fuerte { font-weight: 700; }
+  #ticket .t-item { margin-bottom: 5px; }
+}
+
+/* El atributo "hidden" debe ganar siempre, aunque el elemento tenga otro display */
+[hidden] { display: none !important; }
+
+#listoTexto { white-space: pre-line; }
+
+/* ===== Entrada del personal ===== */
+.portal { max-width: 36rem; margin: 0 auto; padding: 2rem 1.25rem; }
+.portal__mensaje { color: var(--texto-suave); font-size: 1.05rem; }
+.destinos { display: grid; gap: 1rem; margin-top: 1rem; }
+.destino { display: block; padding: 1.2rem; border: 1px solid var(--linea); border-left: 5px solid var(--amarillo); border-radius: 0.8rem; background: var(--superficie); color: var(--texto); text-decoration: none; }
+.destino:hover { border-color: var(--amarillo); }
+.destino strong { display: block; font-size: 1.15rem; margin-bottom: 0.2rem; }
+.destino span { color: var(--texto-suave); font-size: 0.92rem; }
+
+/* ===== Carta de solo lectura (QR en las mesas) ===== */
+.producto--carta { cursor: default; }
+.producto--carta:hover .producto__nombre { color: inherit; }
+.enlace-domicilio { display: inline-block; margin-top: 0.4rem; color: var(--amarillo); font-weight: 700; }
+
+/* ===== Edición de pedidos por el mesero ===== */
+.boton--hero { flex: none; width: auto; margin-top: 0.9rem; padding: 0.6rem 1.1rem; }
+.boton--hero .tab__cuenta { background: rgba(0, 0, 0, 0.2); margin-left: 0.4rem; }
+.aviso--edicion { color: var(--amarillo); font-weight: 700; }
+.etiqueta--modificado { background: var(--rojo); color: #fff; margin-left: 0; }
+#misPedidosLista { display: grid; gap: 0.8rem; margin-top: 0.8rem; }
