@@ -107,6 +107,8 @@ function actualizarCarrito() {
 
 /* ---------- 5. Dibujar el menú ---------- */
 
+// Cada categoría es un bloque desplegable: cerrado muestra solo el nombre,
+// abierto muestra sus productos. Solo una categoría abierta a la vez.
 function dibujarMenu() {
   const menu = $("menu");
   const nav = $("categorias");
@@ -116,15 +118,18 @@ function dibujarMenu() {
   const visibles = datos.categorias.filter((c) => c.id !== CATEGORIA_ADICIONALES);
 
   for (const cat of visibles) {
-    nav.append(h("a", { href: "#cat-" + cat.id, "data-cat": cat.id }, cat.nombre));
+    // Botón de la barra superior
+    nav.append(h("a", {
+      href: "#cat-" + cat.id, "data-cat": cat.id,
+      onclick: (e) => { e.preventDefault(); abrirCategoria(cat.id); },
+    }, cat.nombre));
 
-    const seccion = h("section", { class: "seccion", id: "cat-" + cat.id },
-      h("h2", {}, cat.nombre),
+    // Contenido de la categoría
+    const cuerpo = h("div", { class: "seccion__cuerpo" },
       cat.nota ? h("p", { class: "seccion__nota" }, cat.nota) : null,
     );
-
     for (const p of cat.productos) {
-      seccion.append(
+      cuerpo.append(
         h("button", { class: "producto", type: "button", onclick: () => alTocarProducto(cat, p) },
           h("span", { class: "producto__nombre" }, p.nombre),
           h("span", { class: "producto__precio" }, pesos(p.precio)),
@@ -133,27 +138,38 @@ function dibujarMenu() {
         ),
       );
     }
+
+    // <details> es el elemento HTML nativo para "abrir y cerrar"; <summary> es la parte que siempre se ve
+    const cantidad = cat.productos.length;
+    const seccion = h("details", { class: "seccion", id: "cat-" + cat.id, "data-cat": cat.id },
+      h("summary", {},
+        h("span", { class: "seccion__titulo" }, cat.nombre),
+        h("span", { class: "seccion__cuenta" }, cantidad + (cantidad === 1 ? " opción" : " opciones")),
+      ),
+      cuerpo,
+    );
+    seccion.addEventListener("toggle", () => alAlternarCategoria(seccion));
     menu.append(seccion);
   }
-
-  resaltarCategoriaActiva();
 }
 
-// Marca en la barra la categoría que se está viendo mientras haces scroll
-function resaltarCategoriaActiva() {
-  const secciones = document.querySelectorAll(".seccion");
-  const observador = new IntersectionObserver((entradas) => {
-    for (const e of entradas) {
-      if (!e.isIntersecting) continue;
-      const id = e.target.id.replace("cat-", "");
-      document.querySelectorAll("#categorias a").forEach((a) => {
-        const activa = a.dataset.cat === id;
-        a.classList.toggle("activa", activa);
-        if (activa) a.scrollIntoView({ inline: "center", block: "nearest" });
-      });
-    }
-  }, { rootMargin: "-20% 0px -70% 0px" });
-  secciones.forEach((s) => observador.observe(s));
+// Abre una categoría (desde la barra superior), cierra las demás y baja hasta ella
+function abrirCategoria(id) {
+  document.querySelectorAll(".seccion").forEach((s) => { s.open = s.dataset.cat === id; });
+  $("cat-" + id).scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Se ejecuta cada vez que una categoría se abre o se cierra
+function alAlternarCategoria(seccion) {
+  if (seccion.open) {
+    document.querySelectorAll(".seccion[open]").forEach((s) => { if (s !== seccion) s.open = false; });
+  }
+  const abierta = document.querySelector(".seccion[open]");
+  document.querySelectorAll("#categorias a").forEach((a) => {
+    const activa = Boolean(abierta) && a.dataset.cat === abierta.dataset.cat;
+    a.classList.toggle("activa", activa);
+    if (activa) a.scrollIntoView({ inline: "center", block: "nearest" });
+  });
 }
 
 function dibujarEstado() {
