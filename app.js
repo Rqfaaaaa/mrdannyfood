@@ -358,6 +358,7 @@ function mensajePedido(pedido) {
   if (pedido.modalidad === "domicilio") lineas.push(`Domicilio: aparte, desde ${pesos(DOMICILIO_DESDE)} según la distancia`);
   if (pedido.pago === "Transferencia") {
     lineas.push("Pago: transferencia (adjunto el comprobante en este chat)");
+    lineas.push("Si tienen un código QR de pago, envíenmelo por aquí.");
   } else {
     lineas.push(`Pago: efectivo${pedido.pagaCon ? ` (pago con ${pesos(pedido.pagaCon)})` : ""}`);
   }
@@ -455,8 +456,8 @@ function mostrarListo(pedido) {
   if (pedido.pago === "Transferencia") {
     const datosPago = datos.negocio.datosPago;
     parrafos.push(datosPago
-      ? `Paga por transferencia a: ${datosPago}. El valor del domicilio (desde ${pesos(DOMICILIO_DESDE)}) se suma al total de los productos. Después envía el comprobante en el chat de WhatsApp.`
-      : "Para pagar por transferencia, envíanos el pedido por WhatsApp y te damos los datos de pago ahí mismo.");
+      ? `Paga por transferencia a: ${datosPago}. El restaurante también puede enviarte su código QR de pago por WhatsApp. El valor del domicilio (desde ${pesos(DOMICILIO_DESDE)}) se suma al total de los productos. Después envía el comprobante en el chat de WhatsApp.`
+      : "Para pagar por transferencia, envíanos el pedido por WhatsApp y te enviamos el código QR o los datos de pago ahí mismo.");
     parrafos.push("Empezamos a prepararlo cuando se confirme tu pago.");
   } else if (pedido.modalidad === "domicilio") {
     parrafos.push(`Ya lo estamos preparando. Pagas en efectivo al recibirlo: los productos y el domicilio (desde ${pesos(DOMICILIO_DESDE)}).`);
