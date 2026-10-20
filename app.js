@@ -12,8 +12,8 @@
    7. Inicio
    ===================================================================== */
 
-import { pesos, h, $, generarNumero } from "./utils.js";
-import { crearPedido, escucharPedidos, actualizarPedido } from "./firebase.js";
+import { pesos, h, $, generarNumero, hora12, textoHorario, estaAbierto, cuandoAbrimos } from "./utils.js";
+import { crearPedido, escucharPedidos, actualizarPedido, leerMenu } from "./firebase.js";
 import { exigirSesion } from "./acceso.js";
 
 /* ---------- 1. Configuración ---------- */
@@ -24,8 +24,9 @@ const CATEGORIA_ADICIONALES = "adicionales"; // no sale como sección: son opcio
 const CATEGORIAS_SIN_OPCIONES = ["bebidas"];  // se agregan directo al carrito
 const DOMICILIO_DESDE = 6000;                 // valor normal; según la distancia puede ser 7.000 u 8.000
 
-// Horario (hora de Colombia). Días: 0 = domingo ... 6 = sábado
-const HORARIO = { dias: [0, 3, 4, 5, 6], desde: "18:30", hasta: "23:00" };
+// Horario de servicio por defecto (hora de Colombia). Días: 0 = domingo ... 6 = sábado.
+// Se puede cambiar desde el editor del menú (menu-admin.html), que lo guarda en Firebase.
+const HORARIO_POR_DEFECTO = { dias: [0, 1, 2, 3, 4, 5, 6], desde: "18:00", hasta: "24:00" };
 
 const CLAVE_GUARDADO = "mrdanny-carrito-" + MODO;
 
@@ -125,10 +126,11 @@ function dibujarMenu() {
         h("span", { class: "producto__nombre" }, p.nombre),
         h("span", { class: "producto__precio" }, pesos(p.precio)),
         p.descripcion ? h("span", { class: "producto__desc" }, p.descripcion) : null,
+        p.agotado ? h("span", { class: "producto__agotado" }, "Agotado") : null,
       ];
-      if (MODO === "carta") {
-        // Carta para ver en la mesa: solo se lee, no se pide desde aquí
-        cuerpo.append(h("div", { class: "producto producto--carta" }, ...contenido));
+      if (MODO === "carta" || p.agotado) {
+        // Carta de solo lectura (QR) o producto agotado: se ve, pero no se puede pedir
+        cuerpo.append(h("div", { class: "producto producto--carta" + (p.agotado ? " producto--agotado" : "") }, ...contenido));
       } else {
         cuerpo.append(
           h("button", { class: "producto", type: "button", onclick: () => alTocarProducto(cat, p) },
@@ -169,29 +171,25 @@ function alAlternarCategoria(seccion) {
   });
 }
 
+// Etiqueta pequeña bajo el título: "Abierto ahora" o "Cerrado ahora".
+// El aviso largo de "no estamos en servicio" aparece solo al intentar enviar un pedido.
 function dibujarEstado() {
   const el = $("estado");
   if (!el) return; // en modo mesero no existe
-  const partes = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Bogota", weekday: "short", hour: "numeric", minute: "numeric", hourCycle: "h23",
-  }).formatToParts(new Date());
-  const valor = (tipo) => partes.find((p) => p.type === tipo).value;
-  const dia = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(valor("weekday"));
-  const minutos = Number(valor("hour")) * 60 + Number(valor("minute"));
-  const aMin = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
-
-  const abierto = HORARIO.dias.includes(dia) && minutos >= aMin(HORARIO.desde) && minutos < aMin(HORARIO.hasta);
+  const hs = datos.negocio.horarioServicio;
+  const abierto = estaAbierto(hs);
+  el.hidden = false;
   el.className = "estado " + (abierto ? "abierto" : "cerrado");
   el.textContent = abierto
-    ? "Abierto ahora · hasta las 11:00 PM"
-    : "Cerrado ahora · abrimos miércoles a domingo desde las 6:30 PM";
+    ? `Abierto ahora · hasta las ${hora12(hs.hasta)}`
+    : `Cerrado ahora · abrimos ${cuandoAbrimos(hs).replace(" en adelante", "")}`;
 }
 
 function dibujarPie() {
   const n = datos.negocio;
   $("pie").replaceChildren(
     h("p", {}, n.direccion),
-    h("p", {}, n.horario),
+    h("p", {}, textoHorario(n.horarioServicio)),
     h("p", {}, "Instagram " + n.instagram),
   );
 }
@@ -219,9 +217,9 @@ function abrirProducto(p) {
   const contenedor = $("prodExtras");
   contenedor.replaceChildren();
 
-  if (adicionales && adicionales.productos.length) {
+  if (adicionales && adicionales.productos.some((x) => !x.agotado)) {
     const lista = h("div", { class: "extras" }, h("h3", {}, "Adicionales"));
-    for (const e of adicionales.productos) {
+    for (const e of adicionales.productos.filter((x) => !x.agotado)) {
       const casilla = h("input", { type: "checkbox", id: "x-" + e.id });
       casilla.addEventListener("change", () => {
         casilla.checked ? extrasElegidos.add(e) : extrasElegidos.delete(e);
@@ -387,6 +385,14 @@ async function enviarPedido(evento) {
     return mostrarError(modoEdicion
       ? "El pedido no puede quedar vacío. Para anularlo, usa «Cancelar pedido» en Mis pedidos."
       : "Agrega al menos un producto.");
+  }
+  // Fuera del horario de servicio, el cliente puede ver la carta pero no enviar el pedido
+  if (MODO === "cliente" && !estaAbierto(datos.negocio.horarioServicio)) {
+    mostrarMensaje(
+      "Por ahora no estamos en servicio",
+      `En este momento no estamos en servicio, pero no te preocupes: el sabor de nuestra comida llegará a tu mesa ${cuandoAbrimos(datos.negocio.horarioServicio)}. Tu pedido queda guardado aquí; envíalo cuando abramos.`,
+    );
+    return;
   }
   if (modoEdicion && !valor("fMesa")) return mostrarError("Escribe el número de mesa.");
 
@@ -624,37 +630,51 @@ function conectarEventos() {
   }
 }
 
+// El menú que edita el dueño vive en Firebase. Si todavía no existe o no se puede leer,
+// se usa el archivo menu.json (así la página nunca se queda sin menú).
+async function cargarMenu() {
+  try {
+    const guardado = await leerMenu();
+    if (guardado && Array.isArray(guardado.categorias)) return guardado;
+  } catch (error) {
+    console.warn("No se pudo leer el menú del sistema, se usa menu.json:", error);
+  }
+  const respuesta = await fetch("menu.json");
+  if (!respuesta.ok) throw new Error("No se encontró menu.json");
+  return respuesta.json();
+}
+
 async function iniciar() {
   if (MODO === "mesero") {
     $("etiquetaNombre").textContent = "Nombre del cliente (opcional)";
     $("botonEnviar").textContent = "Enviar a caja";
     exigirSesion({
-      roles: ["mesero", "dueno"],
+      roles: ["mesero", "dueno", "admin"],
       alEntrar: (usuario, rol) => {
-        $("enlaceInicio").hidden = rol !== "dueno"; // solo el dueño puede pasar a la otra pantalla
+        $("enlaceInicio").hidden = !["dueno", "admin"].includes(rol); // solo dueño y admin pasan a otras pantallas
         empezarAEscuchar();
       },
       alSalir: dejarDeEscuchar,
     });
   } else if (MODO === "cliente") {
     ajustarCamposCliente();
-    dibujarEstado();
   }
 
   conectarEventos();
 
   try {
-    const respuesta = await fetch("menu.json");
-    if (!respuesta.ok) throw new Error("No se encontró menu.json");
-    datos = await respuesta.json();
+    datos = await cargarMenu();
   } catch (error) {
     $("menu").replaceChildren(h("p", { class: "fallo" },
       "No se pudo cargar el menú. Revisa que menu.json esté en la misma carpeta y que abras la página con Live Server."));
     console.error(error);
     return;
   }
+  datos.negocio = datos.negocio || {};
+  datos.negocio.horarioServicio = datos.negocio.horarioServicio || HORARIO_POR_DEFECTO;
   dibujarMenu();
   dibujarPie();
+  if (MODO === "cliente") dibujarEstado();
   if (MODO !== "carta") {
     cargarCarrito();
     actualizarCarrito();

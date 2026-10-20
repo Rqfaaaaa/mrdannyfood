@@ -229,4 +229,4 @@ function dejarDeEscuchar() {
 }
 
 dibujar();
-exigirSesion({ roles: ["caja", "dueno"], alEntrar: empezarAEscuchar, alSalir: dejarDeEscuchar });
+exigirSesion({ roles: ["caja", "dueno", "admin"], alEntrar: empezarAEscuchar, alSalir: dejarDeEscuchar });

@@ -286,3 +286,41 @@ a.boton-texto { text-align: center; }
 .aviso--edicion { color: var(--amarillo); font-weight: 700; }
 .etiqueta--modificado { background: var(--rojo); color: #fff; margin-left: 0; }
 #misPedidosLista { display: grid; gap: 0.8rem; margin-top: 0.8rem; }
+
+/* ===== Productos agotados ===== */
+.producto--agotado { opacity: 0.55; }
+.producto--agotado .producto__nombre { text-decoration: line-through; }
+.producto__agotado { grid-column: 2; grid-row: 2; justify-self: end; align-self: end; padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--rojo); color: #fff; font-size: 0.8rem; font-weight: 700; }
+
+/* ===== Editor del menú (dueño) ===== */
+.admin { max-width: 52rem; margin: 0 auto; padding: 1rem 1.25rem 8rem; }
+.admin__bloque { margin: 1rem 0; padding: 1rem; border: 1px solid var(--linea); border-radius: 0.8rem; background: var(--superficie); }
+.admin__bloque h2 { font-size: 1.2rem; color: var(--amarillo); margin-bottom: 0.6rem; }
+.admin__campo { display: block; margin: 0.6rem 0; }
+.admin__campo > span { display: block; margin-bottom: 0.25rem; font-size: 0.85rem; font-weight: 700; color: var(--texto-suave); }
+.admin input[type="text"], .admin input[type="number"], .admin input[type="time"], .admin textarea {
+  width: 100%; padding: 0.6rem 0.7rem; background: var(--fondo); color: var(--texto);
+  border: 1px solid var(--linea); border-radius: 0.5rem; font: inherit;
+}
+.admin textarea { resize: vertical; }
+.admin details { margin: 0.8rem 0; border: 1px solid var(--linea); border-radius: 0.8rem; background: var(--superficie); }
+.admin summary { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem; cursor: pointer; font-weight: 700; font-size: 1.05rem; }
+.admin summary span:last-child { color: var(--texto-suave); font-weight: 400; font-size: 0.9rem; }
+.admin__cuerpo { padding: 0 1rem 1rem; }
+.fila-producto { padding: 0.9rem 0; border-top: 1px solid var(--linea); display: grid; gap: 0.5rem 0.8rem; grid-template-columns: 1fr 9rem; }
+.fila-producto .admin__campo { margin: 0; }
+.fila-producto .ancho { grid-column: 1 / -1; }
+.fila-producto__pie { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+.fila-producto__pie label { display: flex; align-items: center; gap: 0.5rem; }
+.fila-producto__pie input { width: 1.1rem; height: 1.1rem; accent-color: var(--rojo); }
+.fila-producto__pie .boton-texto { margin: 0; }
+.barra-guardar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 1.25rem; background: #000; border-top: 1px solid var(--linea); }
+.barra-guardar .boton { flex: none; padding: 0.7rem 1.4rem; }
+.barra-guardar .boton:disabled { opacity: 0.4; cursor: default; }
+#estadoGuardado { color: var(--texto-suave); font-size: 0.92rem; }
+#estadoGuardado.pendiente { color: var(--amarillo); font-weight: 700; }
+
+/* ===== Logo ===== */
+.hero__marca { display: flex; align-items: center; gap: 1rem; }
+.hero__logo { width: 4.2rem; height: 4.2rem; border-radius: 50%; flex: none; border: 1px solid var(--linea); }
+.admin .opciones { margin-top: 0.3rem; }

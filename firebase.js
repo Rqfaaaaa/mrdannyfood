@@ -5,7 +5,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, limit, onSnapshot, doc, updateDoc, getDoc,
+  query, orderBy, limit, onSnapshot, doc, updateDoc, getDoc, setDoc,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {
   getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
@@ -74,3 +74,18 @@ export async function obtenerRol(uid) {
 export const iniciarSesion = (correo, clave) => signInWithEmailAndPassword(auth, correo, clave);
 export const cerrarSesion = () => signOut(auth);
 export const alCambiarSesion = (funcion) => onAuthStateChanged(auth, funcion);
+
+/* ---------- Menú editable (lo modifica el dueño) ---------- */
+
+// El menú completo vive en UN documento: menu/actual. Devuelve null si todavía no se ha guardado.
+export async function leerMenu(esperaMs = 6000) {
+  const lectura = getDoc(doc(db, "menu", "actual"));
+  const limite = new Promise((_, rechazar) =>
+    setTimeout(() => rechazar(new Error("Tiempo agotado leyendo el menú")), esperaMs));
+  const documento = await Promise.race([lectura, limite]);
+  return documento.exists() ? documento.data() : null;
+}
+
+export function guardarMenu(menu) {
+  return setDoc(doc(db, "menu", "actual"), { ...menu, actualizadoEn: serverTimestamp() });
+}

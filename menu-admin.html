@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Editar menú · Mr Danny Food</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="img/logo.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="staff">
+
+  <header class="staff__barra">
+    <h1>Editar menú</h1>
+    <a href="personal.html" class="boton-texto">Inicio</a>
+    <button id="botonSalir" class="boton-texto">Cerrar sesión</button>
+  </header>
+  <div class="mantel" aria-hidden="true"></div>
+
+  <main class="admin">
+    <p id="avisoArchivo" class="aviso aviso--edicion" hidden>
+      Este menú todavía no está guardado en el sistema (se muestra el de menu.json).
+      Cuando pulses «Guardar cambios», la carta y los pedidos empezarán a usar esta versión.
+    </p>
+    <p id="errorAdmin" class="error" role="alert" hidden></p>
+
+    <section id="negocio" class="admin__bloque"></section>
+    <section id="horarioBloque"></section>
+    <section id="categorias"></section>
+    <button id="nuevaCategoria" class="boton boton--suave" type="button" hidden>+ Nueva categoría</button>
+  </main>
+
+  <div class="barra-guardar">
+    <span id="estadoGuardado" role="status">Cargando…</span>
+    <button id="botonGuardar" class="boton" type="button" disabled>Guardar cambios</button>
+  </div>
+
+  <dialog id="dlgLogin" class="hoja" data-fijo aria-labelledby="loginTitulo">
+    <h2 id="loginTitulo">Acceso del dueño</h2>
+    <form id="formLogin">
+      <label class="campo"><span>Correo</span><input id="loginCorreo" type="email" autocomplete="username" required></label>
+      <label class="campo"><span>Contraseña</span><input id="loginClave" type="password" autocomplete="current-password" required></label>
+      <p id="loginError" class="error" role="alert" hidden></p>
+      <button class="boton" style="width:100%">Entrar</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="menu-admin.js"></script>
+</body>
+</html>
