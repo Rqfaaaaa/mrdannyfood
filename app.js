@@ -20,6 +20,15 @@ import { exigirSesion } from "./acceso.js";
 
 const MODO = document.body.dataset.modo; // "cliente", "mesero" o "carta"
 
+// Texto que se antepone al nombre de un producto en el pedido, la comanda y el mensaje de WhatsApp, para que
+// no se confunda con otro de igual nombre en otra categoría (por ejemplo, "Mr. Danny" es una salchipapa y
+// también un perro). Se define por categoría en el menú con el campo "prefijo"; si no existe, se usa este por defecto.
+const PREFIJOS_POR_DEFECTO = { perros: "Perro", salchipapas: "Salchipapa", "salchipapa-mr-danny": "Salchipapa" };
+const nombreCompleto = (categoria, p) => {
+  const prefijo = categoria.prefijo ?? PREFIJOS_POR_DEFECTO[categoria.id];
+  return prefijo ? `${prefijo} ${p.nombre}` : p.nombre;
+};
+
 const CATEGORIA_ADICIONALES = "adicionales"; // no sale como sección: son opciones dentro de cada producto
 const CATEGORIAS_SIN_OPCIONES = ["bebidas"];  // se agregan directo al carrito
 const DOMICILIO_DESDE = 6000;                 // valor normal; según la distancia puede ser 7.000 u 8.000
@@ -197,11 +206,13 @@ function dibujarPie() {
 /* ---------- 5. Ventana de producto ---------- */
 
 function alTocarProducto(categoria, p) {
+  // Al pedirlo, el producto lleva su nombre completo (ej. "Perro Mr. Danny")
+  const elegido = { ...p, nombre: nombreCompleto(categoria, p) };
   if (CATEGORIAS_SIN_OPCIONES.includes(categoria.id)) {
-    agregarAlCarrito(p, [], "", 1);
+    agregarAlCarrito(elegido, [], "", 1);
     return;
   }
-  abrirProducto(p);
+  abrirProducto(elegido);
 }
 
 function abrirProducto(p) {

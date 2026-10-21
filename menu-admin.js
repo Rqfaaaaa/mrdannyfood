@@ -133,6 +133,13 @@ function bloqueCategoria(cat) {
   const nombreCategoria = h("input", { type: "text", value: cat.nombre || "", maxlength: "60" });
   nombreCategoria.addEventListener("input", () => { cat.nombre = nombreCategoria.value; marcarCambio(); });
 
+  const prefijo = h("input", { type: "text", value: cat.prefijo || "", maxlength: "30", placeholder: "Ej: Perro" });
+  prefijo.addEventListener("input", () => {
+    const texto = prefijo.value.trim();
+    if (texto) cat.prefijo = texto; else delete cat.prefijo;
+    marcarCambio();
+  });
+
   const agregar = h("button", { type: "button", class: "boton boton--suave", onclick: () => {
     cat.productos.push({ id: "p-" + aleatorio(), nombre: "Nuevo producto", descripcion: "", precio: 0 });
     abiertas.add(cat.id);
@@ -147,6 +154,8 @@ function bloqueCategoria(cat) {
         ? h("p", { class: "aviso" }, "Estos adicionales aparecen como opciones dentro de cada producto.")
         : null,
       h("label", { class: "admin__campo" }, h("span", {}, "Nombre de la categoría"), nombreCategoria),
+      h("label", { class: "admin__campo" }, h("span", {}, "Prefijo en el pedido y la comanda (opcional)"), prefijo),
+      h("p", { class: "aviso" }, "Se antepone al nombre del producto para evitar confusiones, por ejemplo «Perro Mr. Danny». Déjalo vacío si no hace falta."),
       cat.productos.map((p) => filaProducto(cat, p)),
       agregar,
     ),
