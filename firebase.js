@@ -5,7 +5,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, limit, onSnapshot, doc, updateDoc, getDoc, setDoc,
+  query, orderBy, limit, onSnapshot, doc, updateDoc, getDoc, setDoc, where, Timestamp,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {
   getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
@@ -39,6 +39,21 @@ export function crearPedido(pedido, esperaMs = 12000) {
 // Devuelve una función para dejar de escuchar.
 export function escucharPedidos(alCambiar, alFallar) {
   const consulta = query(collection(db, "pedidos"), orderBy("creadoEn", "desc"), limit(100));
+  return onSnapshot(
+    consulta,
+    (instantanea) => alCambiar(instantanea.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }))),
+    alFallar,
+  );
+}
+
+// Pedidos desde una fecha (para el panel de ventas), en vivo.
+export function escucharPedidosDesde(fecha, alCambiar, alFallar) {
+  const consulta = query(
+    collection(db, "pedidos"),
+    where("creadoEn", ">=", Timestamp.fromDate(fecha)),
+    orderBy("creadoEn", "desc"),
+    limit(3000),
+  );
   return onSnapshot(
     consulta,
     (instantanea) => alCambiar(instantanea.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }))),
