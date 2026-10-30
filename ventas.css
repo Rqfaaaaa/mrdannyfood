@@ -1,0 +1,73 @@
+/* Estilos del panel de ventas. Va aparte para que no dependa de la versión de styles.css. */
+
+.v-pagina { max-width: 64rem; margin: 0 auto; padding: 1rem 1.25rem 3rem; display: grid; gap: 1rem; }
+
+/* Indicador "En vivo" */
+.v-envivo::before {
+  content: ""; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.45rem;
+  border-radius: 50%; background: var(--verde-wa); animation: v-pulso 1.8s ease-in-out infinite;
+}
+@keyframes v-pulso { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.7); } }
+
+/* Total grande */
+.v-total {
+  padding: 1.4rem 1.4rem 1.2rem; border-radius: 1rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--amarillo) 28%, var(--superficie)), var(--superficie) 70%);
+  border: 1px solid color-mix(in srgb, var(--amarillo) 45%, var(--linea));
+}
+.v-total__etiqueta { margin: 0; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); }
+.v-total__valor { margin: 0.2rem 0 0.8rem; font-family: var(--fuente-titulo); font-size: clamp(2.4rem, 9vw, 3.8rem); line-height: 1; color: var(--amarillo); }
+.v-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.v-chip { padding: 0.35rem 0.8rem; border-radius: 999px; background: rgba(0, 0, 0, 0.35); font-size: 0.92rem; }
+.v-chip strong { color: var(--texto); }
+
+/* Bloques */
+.v-bloque { padding: 1.1rem 1.2rem; border: 1px solid var(--linea); border-radius: 1rem; background: var(--superficie); }
+.v-bloque h2 { margin: 0 0 0.9rem; font-size: 1.1rem; color: var(--texto); }
+.v-bloque h2 small { margin-left: 0.5rem; font-family: var(--fuente-texto); font-size: 0.82rem; font-weight: 400; color: var(--texto-suave); }
+.v-vacio { margin: 0; color: var(--texto-suave); }
+
+/* Local vs domicilio */
+.v-reparto { display: flex; height: 1.1rem; margin-bottom: 1rem; overflow: hidden; border-radius: 999px; background: var(--linea); }
+.v-reparto__local, .v-reparto__domicilio { height: 100%; transition: width 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.v-reparto__local { background: var(--amarillo); }
+.v-reparto__domicilio { background: var(--verde-wa); }
+.v-canales { display: grid; gap: 0.8rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.v-canal { padding: 1rem; border-radius: 0.8rem; background: rgba(0, 0, 0, 0.25); border-left: 5px solid var(--amarillo); }
+.v-canal--domicilio { border-left-color: var(--verde-wa); }
+.v-canal__titulo { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; margin: 0; font-weight: 700; }
+.v-canal__pct { font-size: 0.9rem; color: var(--texto-suave); font-weight: 400; }
+.v-canal__valor { margin: 0.2rem 0 0.2rem; font-family: var(--fuente-titulo); font-size: 1.8rem; line-height: 1.1; }
+.v-canal--local .v-canal__valor { color: var(--amarillo); }
+.v-canal--domicilio .v-canal__valor { color: var(--verde-wa); }
+.v-canal__detalle { margin: 0; font-size: 0.9rem; color: var(--texto-suave); }
+.v-canal__sub { margin: 0.6rem 0 0; padding: 0.5rem 0 0; border-top: 1px dashed var(--linea); font-size: 0.9rem; color: var(--texto-suave); display: grid; gap: 0.15rem; }
+.v-canal__sub span { display: flex; justify-content: space-between; gap: 1rem; }
+
+/* Barras horizontales (formas de pago y productos) */
+.v-fila { margin: 0 0 0.85rem; }
+.v-fila:last-child { margin-bottom: 0; }
+.v-fila__texto { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.3rem; }
+.v-fila__texto strong { white-space: nowrap; }
+.v-fila__texto span { min-width: 0; }
+.v-pista { height: 0.55rem; border-radius: 999px; background: var(--linea); overflow: hidden; }
+.v-barra { height: 100%; border-radius: 999px; background: var(--amarillo); transition: width 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.v-barra--verde { background: var(--verde-wa); }
+.v-rango { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; margin-right: 0.55rem; border-radius: 50%; background: var(--linea); font-size: 0.8rem; font-weight: 700; }
+.v-fila--podio .v-rango { background: var(--amarillo); color: #000; }
+
+/* Gráficas de columnas (por hora y por día) */
+.v-grafica { display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 0.3rem; }
+.v-col { flex: 1 0 2.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; min-width: 0; }
+.v-col__valor { height: 1rem; font-size: 0.72rem; color: var(--texto-suave); white-space: nowrap; }
+.v-col__area { display: flex; align-items: flex-end; width: 100%; height: 9rem; }
+.v-col__barra { width: 100%; min-height: 2px; border-radius: 0.4rem 0.4rem 0 0; background: var(--amarillo); transition: height 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.v-col--maxima .v-col__barra { background: var(--verde-wa); }
+.v-col__etiqueta { font-size: 0.78rem; color: var(--texto-suave); text-align: center; line-height: 1.2; }
+
+.v-nota { margin: 0; font-size: 0.85rem; color: var(--texto-suave); }
+
+@media (prefers-reduced-motion: reduce) {
+  .v-reparto__local, .v-reparto__domicilio, .v-barra, .v-col__barra { transition: none; }
+  .v-envivo::before { animation: none; }
+}

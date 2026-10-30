@@ -14,6 +14,7 @@ exigirSesion({
       window.location.href = DESTINO[rol];
     } else {
       $("mensaje").textContent = "Hola. ¿A dónde quieres ir?";
+      $("enlaceVentas").hidden = false;            // dueño y administrador ven las ventas
       $("enlaceMenu").hidden = rol !== "admin"; // el editor del menú es solo del administrador
       $("destinos").hidden = false;
     }
@@ -21,6 +22,7 @@ exigirSesion({
   alSalir: () => {
     $("destinos").hidden = true;
     $("enlaceMenu").hidden = true;
+    $("enlaceVentas").hidden = true;
     $("mensaje").textContent = "Inicia sesión para continuar.";
   },
 });

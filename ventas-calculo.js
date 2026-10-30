@@ -19,6 +19,27 @@ export function inicioDe(periodo, ahora = new Date()) {
 // "2026-10-21" (día en hora de Colombia)
 export const claveDia = (fecha) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(fecha);
 
+// Hora del día (0 a 23) en Colombia
+export const horaDe = (fecha) => Number(new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Bogota", hour: "numeric", hourCycle: "h23",
+}).format(fecha));
+
+// Todos los días del periodo (incluso los que no tuvieron ventas), de más antiguo a más reciente
+export function diasDelPeriodo(periodo, ahora = new Date()) {
+  const inicio = inicioDe(periodo, ahora).getTime();
+  const hoy = claveDia(ahora);
+  const dias = [];
+  for (let t = inicio; dias.length < 40; t += 24 * 60 * 60 * 1000) {
+    const clave = claveDia(new Date(t + 12 * 60 * 60 * 1000)); // mediodía de ese día, para evitar bordes
+    dias.push(clave);
+    if (clave >= hoy) break;
+  }
+  return dias;
+}
+
+// "En el local" = mesa + para llevar (el cliente está en el restaurante). "Domicilio" = lo que sale a la calle.
+export const canalDe = (pedido) => (pedido.modalidad === "domicilio" ? "domicilio" : "local");
+
 function sumar(grupo, clave, valor) {
   const actual = grupo[clave] || { cantidad: 0, total: 0 };
   actual.cantidad += 1;
@@ -33,7 +54,9 @@ export function resumir(pedidos) {
     cantidad: validos.length,
     promedio: 0,
     porModalidad: {},
+    porCanal: { local: { cantidad: 0, total: 0 }, domicilio: { cantidad: 0, total: 0 } },
     porPago: {},
+    porHora: Array(24).fill(0),
     productos: [],
     porDia: [],
     pendientes: pedidos.filter((p) => p.estado === "pendiente_pago").length,
@@ -45,12 +68,16 @@ export function resumir(pedidos) {
   for (const p of validos) {
     resumen.total += p.totalProductos;
     sumar(resumen.porModalidad, p.modalidad, p.totalProductos);
+    const canal = resumen.porCanal[canalDe(p)];
+    canal.cantidad += 1;
+    canal.total += p.totalProductos;
     sumar(resumen.porPago, p.pago, p.totalProductos);
 
     const fecha = p.creadoEn?.toDate?.();
     if (fecha) {
       const dia = claveDia(fecha);
       dias.set(dia, (dias.get(dia) || 0) + p.totalProductos);
+      resumen.porHora[horaDe(fecha)] += p.totalProductos;
     }
 
     for (const i of p.items) {
@@ -64,5 +91,6 @@ export function resumir(pedidos) {
   resumen.promedio = resumen.cantidad ? Math.round(resumen.total / resumen.cantidad) : 0;
   resumen.productos = [...productos.values()].sort((a, b) => b.cantidad - a.cantidad || b.total - a.total);
   resumen.porDia = [...dias.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1)).map(([dia, total]) => ({ dia, total }));
+  resumen.totalPorDia = dias; // Map "2026-10-21" -> total
   return resumen;
 }

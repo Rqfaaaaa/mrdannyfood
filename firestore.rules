@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Roles del personal ----------
+    // Cada persona del personal tiene un documento en /personal/{su UID} con el campo "rol":
+    // "mesero", "caja", "dueno" o "admin". Esos documentos solo se crean desde la consola de Firebase.
+    function rolDe(uid) {
+      return get(/databases/$(database)/documents/personal/$(uid)).data.rol;
+    }
+    function tieneRol(roles) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/personal/$(request.auth.uid))
+        && rolDe(request.auth.uid) in roles;
+    }
+
+    // ---------- Pedidos ----------
+    // Forma que debe tener todo pedido nuevo
+    function pedidoValido() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['numero', 'origen', 'modalidad', 'mesa', 'nombre', 'telefono',
+                               'direccion', 'pago', 'pagaCon', 'items', 'totalProductos',
+                               'estado', 'creadoEn'])
+        && d.keys().hasAll(['numero', 'origen', 'modalidad', 'nombre', 'pago', 'items',
+                            'totalProductos', 'estado', 'creadoEn'])
+        && d.items is list && d.items.size() > 0 && d.items.size() <= 40
+        && d.totalProductos is number && d.totalProductos > 0 && d.totalProductos <= 3000000
+        && d.nombre is string && d.nombre.size() <= 60
+        && (!('mesa' in d) || d.mesa.size() <= 10)
+        && (!('telefono' in d) || d.telefono.size() <= 20)
+        && (!('direccion' in d) || d.direccion.size() <= 160)
+        && d.creadoEn == request.time;
+    }
+
+    // Lo que puede crear un cliente SIN iniciar sesión: domicilio o para llevar,
+    // con el estado inicial que corresponde a la forma de pago
+    function pedidoDeCliente() {
+      let d = request.resource.data;
+      return d.origen == 'cliente'
+        && d.modalidad in ['domicilio', 'llevar']
+        && d.nombre.size() > 0
+        && ((d.pago == 'Transferencia' && d.estado == 'pendiente_pago')
+            || (d.pago == 'Efectivo' && d.estado == 'confirmado'));
+    }
+
+    // Caja y dueño: pueden cambiar el estado y marcar una modificación como vista. Nada más.
+    function cambioDeCaja() {
+      let d = request.resource.data;
+      return tieneRol(['caja', 'dueno', 'admin'])
+        && d.diff(resource.data).affectedKeys().hasOnly(['estado', 'modificado'])
+        && (!('modificado' in d) || d.modificado is bool);
+    }
+
+    // Mesero: puede cambiar los productos, la mesa y el nombre de un pedido DE MESA mientras
+    // sigue "confirmado" o "preparando", o cancelarlo. No puede tocar nada más
+    // (ni el estado "listo" o "entregado", ni los pagos, ni los pedidos a domicilio).
+    // Cada cambio deja el pedido marcado como "modificado" para que caja se entere.
+    function cambioDeMesero() {
+      let antes = resource.data;
+      let despues = request.resource.data;
+      return tieneRol(['mesero', 'dueno', 'admin'])
+        && antes.modalidad == 'mesa'
+        && antes.estado in ['confirmado', 'preparando']
+        && despues.diff(antes).affectedKeys().hasOnly(['items', 'totalProductos', 'mesa', 'nombre', 'estado', 'modificado'])
+        && despues.estado in [antes.estado, 'cancelado']
+        && despues.modificado == true
+        && despues.items is list && despues.items.size() > 0 && despues.items.size() <= 40
+        && despues.totalProductos is number && despues.totalProductos > 0 && despues.totalProductos <= 3000000
+        && despues.mesa is string && despues.mesa.size() > 0 && despues.mesa.size() <= 10
+        && despues.nombre is string && despues.nombre.size() <= 60;
+    }
+
+    match /pedidos/{pedidoId} {
+      // Crear: el mesero y el dueño (pedidos de mesa), o un cliente con las condiciones de arriba
+      allow create: if pedidoValido()
+        && (tieneRol(['mesero', 'dueno', 'admin']) || pedidoDeCliente());
+
+      // Ver: mesero, caja y dueño (el mesero necesita seguir sus pedidos)
+      allow read: if tieneRol(['mesero', 'caja', 'dueno', 'admin']);
+
+      allow update: if cambioDeCaja() || cambioDeMesero();
+      allow delete: if false;
+    }
+
+    // ---------- Menú ----------
+    // Todos pueden leerlo (es la carta pública). Solo el administrador (rol "admin") puede cambiarlo.
+    // Para darle este poder al dueño más adelante, cambia ['admin'] por ['admin', 'dueno'].
+    match /menu/{docId} {
+      allow read: if true;
+      allow write: if tieneRol(['admin'])
+        && request.resource.data.categorias is list
+        && request.resource.data.negocio is map;
+    }
+
+    // Cada persona puede leer SOLO su propio documento de rol (para saber a dónde mandarla).
+    // Nadie puede escribirlos desde la página.
+    match /personal/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}
