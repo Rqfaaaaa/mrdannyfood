@@ -493,7 +493,7 @@ function mostrarListo(pedido) {
 /* ---------- Pedidos de mesa del mesero: ver, editar y cancelar ---------- */
 
 const NOMBRE_ESTADO = { confirmado: "Recién enviado", preparando: "En preparación", listo: "Listo para servir" };
-const EDITABLES = ["confirmado", "preparando"]; // hasta aquí el mesero puede cambiar el pedido (igual que en las reglas)
+const EDITABLES = ["confirmado", "preparando", "listo"]; // hasta aquí el mesero puede cambiar el pedido (igual que en las reglas)
 
 function empezarAEscuchar() {
   if (detener) return;
