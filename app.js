@@ -367,6 +367,7 @@ function mensajePedido(pedido) {
   if (pedido.modalidad === "domicilio") lineas.push(`Domicilio: aparte, desde ${pesos(DOMICILIO_DESDE)} según la distancia`);
   if (pedido.pago === "Transferencia") {
     lineas.push("Pago: transferencia (adjunto el comprobante en este chat)");
+    lineas.push("Llave: @paulag1953");
     lineas.push("Si tienen un código QR de pago, envíenmelo por aquí.");
   } else {
     lineas.push(`Pago: efectivo${pedido.pagaCon ? ` (pago con ${pesos(pedido.pagaCon)})` : ""}`);
