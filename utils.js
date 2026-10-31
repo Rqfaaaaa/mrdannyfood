@@ -106,3 +106,13 @@ export function cuandoAbrimos(hs, fecha = new Date()) {
   }
   return "muy pronto";
 }
+
+/* ---------- Nombre completo de un producto (con prefijo de su categoría) ---------- */
+
+// Igual que en app.js: "Perro Mr. Danny" vs "Salchipapa Mr. Danny"
+export const PREFIJOS_POR_DEFECTO = { perros: "Perro", salchipapas: "Salchipapa", "salchipapa-mr-danny": "Salchipapa" };
+
+export function nombreCompleto(categoria, p) {
+  const prefijo = categoria.prefijo ?? PREFIJOS_POR_DEFECTO[categoria.id];
+  return prefijo ? `${prefijo} ${p.nombre}` : p.nombre;
+}

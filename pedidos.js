@@ -3,9 +3,9 @@
    cambia estados e imprime comandas.
    ===================================================================== */
 
-import { escucharPedidos, cambiarEstado, marcarRevisado } from "./firebase.js";
+import { escucharPedidos, cambiarEstado, marcarRevisado, actualizarPedido, leerMenu } from "./firebase.js";
 import { exigirSesion } from "./acceso.js";
-import { pesos, h, $, textoModalidad } from "./utils.js";
+import { pesos, h, $, textoModalidad, nombreCompleto } from "./utils.js";
 
 /* ---------- Configuración ---------- */
 
@@ -102,6 +102,9 @@ function tarjeta(p) {
     const [nuevo, texto] = SIGUIENTE[p.estado];
     botones.push(h("button", { class: "boton", onclick: () => cambiarEstado(p.id, nuevo) }, texto));
   }
+  if (EDITABLES.includes(p.estado)) {
+    botones.push(h("button", { class: "boton boton--suave", onclick: () => abrirEditor(p) }, "Editar pedido"));
+  }
   if (!["pendiente_pago", "cancelado"].includes(p.estado)) {
     botones.push(h("button", { class: "boton boton--suave", onclick: () => imprimir(p) }, "Imprimir comanda"));
   }
@@ -156,6 +159,178 @@ function dibujar() {
   // Los más antiguos primero en cocina (salen en orden de llegada); en el resto, los más nuevos primero
   if (f.id === "cocina") visibles.reverse();
   visibles.forEach((p) => lista.append(tarjeta(p)));
+}
+
+/* ---------- Editar un pedido ---------- */
+/* Caja, dueño y administrador pueden cambiar los productos, las cantidades, las notas y los datos
+   del cliente mientras el pedido no esté listo. Queda marcado como MODIFICADO para reimprimir la comanda. */
+
+const EDITABLES = ["pendiente_pago", "confirmado", "preparando"];
+let edicion = null;      // pedido que se está editando
+let menuCargado = null;  // menú, para agregar productos
+let categoriaElegida = null;
+
+// Mismo origen del menú que usan las demás pantallas: Firebase, y menu.json si no está
+async function obtenerMenu() {
+  if (menuCargado) return menuCargado;
+  try {
+    const guardado = await leerMenu();
+    if (guardado && Array.isArray(guardado.categorias)) { menuCargado = guardado; return menuCargado; }
+  } catch (error) {
+    console.warn("No se pudo leer el menú del sistema, se usa menu.json:", error);
+  }
+  const respuesta = await fetch("menu.json");
+  if (!respuesta.ok) throw new Error("No se encontró menu.json");
+  menuCargado = await respuesta.json();
+  return menuCargado;
+}
+
+const totalEdicion = () => edicion.lineas.reduce((s, l) => s + l.precioUnidad * l.cantidad, 0);
+
+function errorEdicion(texto) {
+  $("editError").hidden = !texto;
+  $("editError").textContent = texto || "";
+}
+
+function campo(clave, etiqueta, valor, tipo = "text") {
+  const entrada = h("input", { type: tipo, value: valor == null ? "" : String(valor), maxlength: "160" });
+  edicion.entradas[clave] = entrada;
+  return h("label", { class: "ed-campo" }, h("span", {}, etiqueta), entrada);
+}
+
+function dibujarCampos() {
+  const e = edicion;
+  const campos = [];
+  if (e.modalidad === "mesa") {
+    campos.push(campo("mesa", "Mesa", e.original.mesa), campo("nombre", "Nombre del cliente", e.original.nombre));
+  } else {
+    campos.push(campo("nombre", "Nombre", e.original.nombre), campo("telefono", "Teléfono", e.original.telefono, "tel"));
+    if (e.modalidad === "domicilio") campos.push(campo("direccion", "Dirección de entrega", e.original.direccion));
+    if (e.modalidad === "domicilio" && e.original.pago === "Efectivo") campos.push(campo("pagaCon", "Paga con (opcional)", e.original.pagaCon, "text"));
+  }
+  $("editCampos").replaceChildren(...campos);
+}
+
+function dibujarLineas() {
+  const contenedor = $("editLineas");
+  contenedor.replaceChildren();
+  edicion.lineas.forEach((l, indice) => {
+    const nota = h("input", { type: "text", value: l.nota || "", maxlength: "120", placeholder: "Nota (ej: sin cebolla)" });
+    nota.addEventListener("input", () => { l.nota = nota.value; });
+    contenedor.append(
+      h("div", { class: "ed-linea" },
+        h("div", { class: "ed-linea__fila" }, h("strong", {}, l.nombre), h("span", {}, pesos(l.precioUnidad * l.cantidad))),
+        l.extras.length ? h("small", {}, "Con: " + l.extras.join(", ")) : null,
+        h("div", { class: "ed-linea__ctrl" },
+          h("button", { type: "button", "aria-label": "Quitar uno", onclick: () => cambiarCantidadLinea(indice, -1) }, "−"),
+          h("output", {}, String(l.cantidad)),
+          h("button", { type: "button", "aria-label": "Agregar uno", onclick: () => cambiarCantidadLinea(indice, 1) }, "+"),
+          nota,
+          h("button", { type: "button", class: "boton-texto", onclick: () => { edicion.lineas.splice(indice, 1); dibujarLineas(); } }, "Quitar"),
+        ),
+      ),
+    );
+  });
+  $("editTotal").textContent = pesos(totalEdicion());
+}
+
+function cambiarCantidadLinea(indice, delta) {
+  const linea = edicion.lineas[indice];
+  linea.cantidad += delta;
+  if (linea.cantidad <= 0) edicion.lineas.splice(indice, 1);
+  dibujarLineas();
+}
+
+function agregarProductoEdicion(categoria, producto) {
+  const nombre = categoria.id === "adicionales" ? "Adicional " + producto.nombre : nombreCompleto(categoria, producto);
+  const existente = edicion.lineas.find((l) => l.id === producto.id && l.extras.length === 0 && !l.nota);
+  if (existente) existente.cantidad += 1;
+  else edicion.lineas.push({ id: producto.id, nombre, cantidad: 1, precioUnidad: producto.precio, extras: [], nota: "" });
+  dibujarLineas();
+}
+
+function dibujarCatalogo(menu) {
+  $("editCats").replaceChildren(...menu.categorias.map((c) =>
+    h("button", {
+      type: "button", class: "tab" + (c.id === categoriaElegida ? " activa" : ""),
+      onclick: () => { categoriaElegida = c.id; dibujarCatalogo(menu); },
+    }, c.nombre)));
+
+  const categoria = menu.categorias.find((c) => c.id === categoriaElegida) || menu.categorias[0];
+  $("editProductos").replaceChildren(...categoria.productos.map((producto) => {
+    const atributos = { type: "button", class: "ed-producto", onclick: () => agregarProductoEdicion(categoria, producto) };
+    if (producto.agotado) atributos.disabled = "";
+    return h("button", atributos, h("span", {}, producto.nombre + (producto.agotado ? " (agotado)" : "")), h("strong", {}, pesos(producto.precio)));
+  }));
+}
+
+async function mostrarCatalogo() {
+  try {
+    const menu = await obtenerMenu();
+    categoriaElegida = categoriaElegida || menu.categorias[0].id;
+    $("editCatalogo").hidden = false;
+    dibujarCatalogo(menu);
+  } catch (error) {
+    console.error(error);
+    errorEdicion("No se pudo cargar el menú para agregar productos.");
+  }
+}
+
+function abrirEditor(pedido) {
+  edicion = {
+    id: pedido.id, numero: pedido.numero, modalidad: pedido.modalidad, original: pedido, entradas: {},
+    lineas: pedido.items.map((i) => ({
+      id: i.id || i.nombre, nombre: i.nombre, cantidad: i.cantidad, precioUnidad: i.precioUnidad,
+      extras: i.extras || [], nota: i.nota || "",
+    })),
+  };
+  $("editTitulo").textContent = `Editar pedido #${pedido.numero} · ${textoModalidad(pedido)}`;
+  $("editCatalogo").hidden = true;
+  errorEdicion("");
+  dibujarCampos();
+  dibujarLineas();
+  $("dlgEditar").showModal();
+}
+
+async function guardarEdicion() {
+  const e = edicion;
+  const valor = (clave) => (e.entradas[clave] ? e.entradas[clave].value.trim() : "");
+  errorEdicion("");
+
+  if (e.lineas.length === 0) return errorEdicion("El pedido no puede quedar vacío. Para anularlo, usa «Cancelar» en la tarjeta.");
+
+  const cambios = {
+    items: e.lineas.map((l) => ({ id: l.id, nombre: l.nombre, cantidad: l.cantidad, precioUnidad: l.precioUnidad, extras: l.extras, nota: (l.nota || "").trim() })),
+    totalProductos: totalEdicion(),
+  };
+  if (e.modalidad === "mesa") {
+    cambios.mesa = valor("mesa");
+    cambios.nombre = valor("nombre");
+    if (!cambios.mesa) return errorEdicion("Escribe el número de mesa.");
+  } else {
+    cambios.nombre = valor("nombre");
+    cambios.telefono = valor("telefono").replace(/\D/g, "");
+    if (!cambios.nombre) return errorEdicion("Escribe el nombre del cliente.");
+    if (e.modalidad === "domicilio") {
+      cambios.direccion = valor("direccion");
+      if (!cambios.direccion) return errorEdicion("Escribe la dirección de entrega.");
+      if (e.entradas.pagaCon) cambios.pagaCon = Number(valor("pagaCon").replace(/\D/g, "")) || null;
+    }
+  }
+
+  $("editGuardar").disabled = true;
+  $("editGuardar").textContent = "Guardando…";
+  try {
+    await actualizarPedido(e.id, cambios);
+    $("dlgEditar").close();
+    edicion = null;
+  } catch (error) {
+    console.error(error);
+    errorEdicion("No se pudo guardar el cambio. Revisa la conexión e inténtalo de nuevo.");
+  } finally {
+    $("editGuardar").disabled = false;
+    $("editGuardar").textContent = "Guardar cambios";
+  }
 }
 
 /* ---------- Imprimir comanda ---------- */
@@ -227,6 +402,14 @@ function dejarDeEscuchar() {
   pedidos = [];
   dibujar();
 }
+
+// Ventana de edición: solo se cierra con «Cancelar» o la ✕ (no al tocar fuera, para no perder cambios por error)
+$("dlgEditar").addEventListener("click", (evento) => {
+  if (evento.target.hasAttribute("data-cerrar")) { $("dlgEditar").close(); edicion = null; }
+});
+$("editGuardar").addEventListener("click", guardarEdicion);
+$("editAgregar").addEventListener("click", mostrarCatalogo);
+$("dlgEditar").addEventListener("cancel", () => { edicion = null; });
 
 dibujar();
 exigirSesion({ roles: ["caja", "dueno", "admin"], alEntrar: empezarAEscuchar, alSalir: dejarDeEscuchar });

@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="img/logo.png">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="pedidos.css">
 </head>
 <body class="staff">
 
@@ -34,6 +35,29 @@
       <p id="loginError" class="error" role="alert" hidden></p>
       <button class="boton" style="width:100%">Entrar</button>
     </form>
+  </dialog>
+
+  <!-- Editar un pedido (caja): cambiar productos, cantidades, notas y datos del cliente -->
+  <dialog id="dlgEditar" class="hoja ed" aria-labelledby="editTitulo">
+    <div class="hoja__cabeza">
+      <h2 id="editTitulo">Editar pedido</h2>
+      <button class="cerrar" data-cerrar aria-label="Cerrar sin guardar">✕</button>
+    </div>
+    <p class="aviso">Los cambios no se aplican hasta pulsar «Guardar cambios».</p>
+
+    <div id="editCampos"></div>
+    <div id="editLineas"></div>
+
+    <button id="editAgregar" type="button" class="boton boton--suave">+ Agregar productos</button>
+    <div id="editCatalogo" hidden>
+      <div id="editCats" class="ed-cats"></div>
+      <div id="editProductos" class="ed-productos"></div>
+    </div>
+
+    <div class="total-linea"><span>Total productos</span><strong id="editTotal">$0</strong></div>
+    <p id="editError" class="error" role="alert" hidden></p>
+    <button id="editGuardar" type="button" class="boton boton--whatsapp">Guardar cambios</button>
+    <button type="button" class="boton-texto" data-cerrar>Cancelar</button>
   </dialog>
 
   <!-- Comanda para imprimir (solo se ve al imprimir) -->

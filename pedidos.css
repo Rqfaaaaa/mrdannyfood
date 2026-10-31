@@ -1,0 +1,33 @@
+/* Editor de pedidos de caja. Va aparte para no depender de la versión de styles.css. */
+
+.ed { max-height: 94dvh; }
+.ed .aviso { margin: 0.2rem 0 0.8rem; }
+
+.ed-campo { display: block; margin: 0 0 0.7rem; }
+.ed-campo > span { display: block; margin-bottom: 0.2rem; font-size: 0.82rem; font-weight: 700; color: var(--texto-suave); }
+.ed input[type="text"], .ed input[type="tel"] {
+  width: 100%; padding: 0.6rem 0.7rem; background: var(--fondo); color: var(--texto);
+  border: 1px solid var(--linea); border-radius: 0.5rem; font: inherit;
+}
+
+.ed-linea { padding: 0.75rem 0; border-top: 1px solid var(--linea); }
+.ed-linea__fila { display: flex; justify-content: space-between; gap: 1rem; }
+.ed-linea small { display: block; color: var(--texto-suave); }
+.ed-linea__ctrl { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem; flex-wrap: wrap; }
+.ed-linea__ctrl button:not(.boton-texto) {
+  width: 2.3rem; height: 2.3rem; border-radius: 0.5rem; border: 1px solid var(--linea); background: none; font-size: 1.2rem;
+}
+.ed-linea__ctrl output { min-width: 1.6rem; text-align: center; font-weight: 700; }
+.ed-linea__ctrl input { flex: 1 1 8rem; min-width: 0; }
+.ed-linea__ctrl .boton-texto { margin: 0; }
+
+#editAgregar { width: 100%; margin: 0.8rem 0 0.4rem; }
+.ed-cats { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.6rem 0; }
+.ed-productos { display: grid; gap: 0.4rem; }
+.ed-producto {
+  display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0.8rem; text-align: left;
+  border: 1px solid var(--linea); border-radius: 0.6rem; background: var(--fondo); color: var(--texto);
+}
+.ed-producto:hover:not(:disabled) { border-color: var(--amarillo); }
+.ed-producto:disabled { opacity: 0.45; text-decoration: line-through; cursor: default; }
+.ed .total-linea { margin: 1rem 0 0.6rem; }
