@@ -3,7 +3,8 @@
    cambia estados e imprime comandas.
    ===================================================================== */
 
-import { escucharPedidos, cambiarEstado, marcarRevisado, actualizarPedido, leerMenu } from "./firebase.js";
+import { escucharPedidos, cambiarEstado, marcarRevisado, actualizarPedido, leerMenu, marcarPago } from "./firebase.js";
+import { agruparPorCuenta, pagoDe } from "./cuentas.js";
 import { exigirSesion } from "./acceso.js";
 import { pesos, h, $, textoModalidad, nombreCompleto } from "./utils.js";
 
@@ -63,6 +64,14 @@ function pitar() {
   } catch { /* sin sonido, no pasa nada */ }
 }
 
+// Aviso al cliente de que su pedido salió (o está listo para recoger)
+function enlaceAvisoSalida(pedido) {
+  const mensaje = pedido.modalidad === "domicilio"
+    ? `Hola ${pedido.nombre}, tu pedido #${pedido.numero} de ${NOMBRE_NEGOCIO} ya salió y va en camino. ¡Buen provecho!`
+    : `Hola ${pedido.nombre}, tu pedido #${pedido.numero} de ${NOMBRE_NEGOCIO} ya está listo para recoger. ¡Te esperamos!`;
+  return `https://wa.me/${telefonoWa(pedido.telefono)}?text=${encodeURIComponent(mensaje)}`;
+}
+
 // Número en formato internacional para WhatsApp (celular colombiano de 10 dígitos → 57 + número)
 const telefonoWa = (t) => (t.length === 10 ? "57" + t : t);
 
@@ -83,11 +92,29 @@ function dibujarTabs() {
   }
 }
 
+// Un producto de la lista de la tarjeta
+const lineaProducto = (i) => h("li", {},
+  h("span", {}, `${i.cantidad} × ${i.nombre}`),
+  i.extras?.length ? h("small", {}, "Con: " + i.extras.join(", ")) : null,
+  i.nota ? h("small", { class: "nota" }, "Nota: " + i.nota) : null,
+);
+
+// Si el mesero separó la cuenta por personas, se muestran agrupadas con su subtotal
+function listaProductos(p) {
+  const grupos = agruparPorCuenta(p.items);
+  if (grupos.length <= 1) return h("ul", { class: "pedido__items" }, p.items.map(lineaProducto));
+  return h("div", {}, grupos.map((g) => [
+    h("p", { class: "pedido__cuenta" }, `Cuenta ${g.cuenta} · ${pesos(g.total)}`),
+    h("ul", { class: "pedido__items" }, g.items.map(lineaProducto)),
+  ]));
+}
+
 function tarjeta(p) {
   const detalleCliente = [
     p.nombre || null,
     p.telefono ? "Tel. " + p.telefono : null,
     p.direccion ? p.direccion : null,
+    p.atendidoPor ? "Atiende: " + p.atendidoPor : null,
   ].filter(Boolean).join(" · ");
 
   const botones = [];
@@ -100,13 +127,30 @@ function tarjeta(p) {
   }
   if (SIGUIENTE[p.estado]) {
     const [nuevo, texto] = SIGUIENTE[p.estado];
-    botones.push(h("button", { class: "boton", onclick: () => cambiarEstado(p.id, nuevo) }, texto));
+    // Al entregar un domicilio o un pedido para llevar, se abre WhatsApp con el aviso ya escrito para el cliente.
+    // WhatsApp exige que la persona toque «Enviar»: un envío 100 % automático necesita un servicio de pago.
+    const avisaAlCliente = nuevo === "entregado" && p.origen === "cliente" && p.telefono;
+    botones.push(h("button", {
+      class: "boton",
+      onclick: () => {
+        if (avisaAlCliente) window.open(enlaceAvisoSalida(p), "_blank", "noopener"); // antes de guardar, para que el navegador no lo bloquee
+        cambiarEstado(p.id, nuevo);
+      },
+    }, avisaAlCliente ? "Marcar entregado y avisar" : texto));
   }
   if (EDITABLES.includes(p.estado)) {
     botones.push(h("button", { class: "boton boton--suave", onclick: () => abrirEditor(p) }, "Editar pedido"));
   }
   if (!["pendiente_pago", "cancelado"].includes(p.estado)) {
     botones.push(h("button", { class: "boton boton--suave", onclick: () => imprimir(p) }, "Imprimir comanda"));
+  }
+  // Pedidos del mesero (mesa y para llevar): cuenta para el cliente y forma de pago
+  if (p.origen === "mesero" && p.estado !== "cancelado") {
+    botones.push(h("button", { class: "boton boton--suave", onclick: () => imprimirCuentas(p) }, "Imprimir cuenta"));
+    if (!pagoDe(p)) {
+      botones.push(h("button", { class: "boton boton--suave", onclick: () => marcarPago(p.id, "Efectivo") }, "Pagó en efectivo"));
+      botones.push(h("button", { class: "boton boton--suave", onclick: () => marcarPago(p.id, "Transferencia") }, "Pagó por transferencia"));
+    }
   }
   if (p.telefono && p.origen === "cliente") {
     const mensaje = `Hola ${p.nombre}, te escribimos de ${NOMBRE_NEGOCIO} por tu pedido #${p.numero}.`;
@@ -131,15 +175,9 @@ function tarjeta(p) {
       h("span", { class: "etiqueta etiqueta--" + p.estado }, NOMBRE_ESTADO[p.estado] || p.estado),
     ),
     detalleCliente ? h("p", { class: "pedido__cliente" }, detalleCliente) : null,
-    h("ul", { class: "pedido__items" },
-      p.items.map((i) => h("li", {},
-        h("span", {}, `${i.cantidad} × ${i.nombre}`),
-        i.extras?.length ? h("small", {}, "Con: " + i.extras.join(", ")) : null,
-        i.nota ? h("small", { class: "nota" }, "Nota: " + i.nota) : null,
-      )),
-    ),
+    listaProductos(p),
     h("p", { class: "pedido__pie" },
-      h("span", {}, `${p.pago}${p.pagaCon ? " · paga con " + pesos(p.pagaCon) : ""}`),
+      h("span", {}, `${pagoDe(p) || "Pago por definir"}${p.pagaCon ? " · paga con " + pesos(p.pagaCon) : ""}`),
       h("strong", {}, pesos(p.totalProductos)),
     ),
     h("div", { class: "pedido__acciones" }, botones),
@@ -165,7 +203,7 @@ function dibujar() {
 /* Caja, dueño y administrador pueden cambiar los productos, las cantidades, las notas y los datos
    del cliente mientras el pedido no esté listo. Queda marcado como MODIFICADO para reimprimir la comanda. */
 
-const EDITABLES = ["pendiente_pago", "confirmado", "preparando"];
+const EDITABLES = ["pendiente_pago", "confirmado", "preparando", "listo"];
 let edicion = null;      // pedido que se está editando
 let menuCargado = null;  // menú, para agregar productos
 let categoriaElegida = null;
@@ -221,6 +259,7 @@ function dibujarLineas() {
       h("div", { class: "ed-linea" },
         h("div", { class: "ed-linea__fila" }, h("strong", {}, l.nombre), h("span", {}, pesos(l.precioUnidad * l.cantidad))),
         l.extras.length ? h("small", {}, "Con: " + l.extras.join(", ")) : null,
+        l.cuenta ? h("small", {}, "Cuenta " + l.cuenta) : null,
         h("div", { class: "ed-linea__ctrl" },
           h("button", { type: "button", "aria-label": "Quitar uno", onclick: () => cambiarCantidadLinea(indice, -1) }, "−"),
           h("output", {}, String(l.cantidad)),
@@ -282,6 +321,7 @@ function abrirEditor(pedido) {
     lineas: pedido.items.map((i) => ({
       id: i.id || i.nombre, nombre: i.nombre, cantidad: i.cantidad, precioUnidad: i.precioUnidad,
       extras: i.extras || [], nota: i.nota || "",
+      ...(i.cuenta ? { cuenta: i.cuenta } : {}),
     })),
   };
   $("editTitulo").textContent = `Editar pedido #${pedido.numero} · ${textoModalidad(pedido)}`;
@@ -300,7 +340,7 @@ async function guardarEdicion() {
   if (e.lineas.length === 0) return errorEdicion("El pedido no puede quedar vacío. Para anularlo, usa «Cancelar» en la tarjeta.");
 
   const cambios = {
-    items: e.lineas.map((l) => ({ id: l.id, nombre: l.nombre, cantidad: l.cantidad, precioUnidad: l.precioUnidad, extras: l.extras, nota: (l.nota || "").trim() })),
+    items: e.lineas.map((l) => ({ id: l.id, nombre: l.nombre, cantidad: l.cantidad, precioUnidad: l.precioUnidad, extras: l.extras, nota: (l.nota || "").trim(), ...(l.cuenta ? { cuenta: l.cuenta } : {}) })),
     totalProductos: totalEdicion(),
   };
   if (e.modalidad === "mesa") {
@@ -317,6 +357,9 @@ async function guardarEdicion() {
       if (e.entradas.pagaCon) cambios.pagaCon = Number(valor("pagaCon").replace(/\D/g, "")) || null;
     }
   }
+
+  // Si el pedido ya estaba listo, vuelve a "en preparación" para que la cocina vea lo que cambió
+  if (e.original.estado === "listo") cambios.estado = "preparando";
 
   $("editGuardar").disabled = true;
   $("editGuardar").textContent = "Guardando…";
@@ -348,6 +391,7 @@ function imprimir(p) {
     p.nombre ? linea("Cliente: " + p.nombre) : null,
     p.direccion ? linea("Dir: " + p.direccion) : null,
     p.telefono ? linea("Tel: " + p.telefono) : null,
+    p.atendidoPor ? linea("Atiende: " + p.atendidoPor) : null,
     h("hr"),
     // Un bloque por producto: cantidad y nombre, adicionales y nota
     ...p.items.map((i) => h("div", { class: "t-item" },
@@ -365,6 +409,39 @@ function imprimir(p) {
   $("ticket").replaceChildren(...partes);
   window.print();
   if (p.modificado) marcarRevisado(p.id).catch((error) => console.error(error));
+}
+
+/* ---------- Cuenta para el cliente (una por persona) ---------- */
+/* Es un resumen informativo de lo consumido. NO es una factura de venta. */
+
+function imprimirCuentas(p) {
+  const linea = (texto, clase) => h("p", { class: clase || "" }, texto);
+  const filaPrecio = (izquierda, derecha) => h("p", { class: "t-linea" }, h("span", {}, izquierda), h("span", {}, derecha));
+  const grupos = agruparPorCuenta(p.items);
+  const varias = grupos.length > 1;
+  const forma = pagoDe(p);
+
+  const paginas = grupos.map((g) => h("div", { class: "t-pagina" },
+    ...[
+      linea(NOMBRE_NEGOCIO, "t-titulo"),
+      linea(varias ? `CUENTA ${g.cuenta}` : "CUENTA", "t-titulo"),
+      linea(`${textoModalidad(p)} · pedido #${p.numero}`, "t-fuerte"),
+      p.nombre ? linea("Cliente: " + p.nombre) : null,
+      p.atendidoPor ? linea("Atiende: " + p.atendidoPor) : null,
+      h("hr"),
+      ...g.items.flatMap((i) => [
+        filaPrecio(`${i.cantidad} x ${i.nombre}`, pesos(i.precioUnidad * i.cantidad)),
+        i.extras?.length ? linea("   + " + i.extras.join(", ")) : null,
+      ]),
+      h("hr"),
+      filaPrecio("TOTAL", pesos(g.total)),
+      forma ? linea("Pago: " + forma) : null,
+      linea("Documento informativo. No es factura de venta.", "t-nota"),
+    ].filter(Boolean),
+  ));
+
+  $("ticket").replaceChildren(...paginas);
+  window.print();
 }
 
 /* ---------- Conexión en vivo ---------- */

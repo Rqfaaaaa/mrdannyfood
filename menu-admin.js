@@ -5,7 +5,7 @@
 
 import { exigirSesion } from "./acceso.js";
 import { leerMenu, guardarMenu } from "./firebase.js";
-import { h, $, DIAS, ORDEN_DIAS, textoHorario } from "./utils.js";
+import { h, $, DIAS, ORDEN_DIAS, textoHorario, SIN_ADICIONALES_POR_DEFECTO } from "./utils.js";
 
 let menu = null;               // el menú que se está editando
 let sinGuardar = false;
@@ -140,6 +140,10 @@ function bloqueCategoria(cat) {
     marcarCambio();
   });
 
+  const sinAdicionales = h("input", { type: "checkbox" });
+  sinAdicionales.checked = cat.sinAdicionales ?? SIN_ADICIONALES_POR_DEFECTO.includes(cat.id);
+  sinAdicionales.addEventListener("change", () => { cat.sinAdicionales = sinAdicionales.checked; marcarCambio(); });
+
   const agregar = h("button", { type: "button", class: "boton boton--suave", onclick: () => {
     cat.productos.push({ id: "p-" + aleatorio(), nombre: "Nuevo producto", descripcion: "", precio: 0 });
     abiertas.add(cat.id);
@@ -155,6 +159,7 @@ function bloqueCategoria(cat) {
         : null,
       h("label", { class: "admin__campo" }, h("span", {}, "Nombre de la categoría"), nombreCategoria),
       h("label", { class: "admin__campo" }, h("span", {}, "Prefijo en el pedido y la comanda (opcional)"), prefijo),
+      cat.id === "adicionales" ? null : h("label", { class: "fila-producto__pie" }, sinAdicionales, "No ofrecer adicionales en esta categoría"),
       h("p", { class: "aviso" }, "Se antepone al nombre del producto para evitar confusiones, por ejemplo «Perro Mr. Danny». Déjalo vacío si no hace falta."),
       cat.productos.map((p) => filaProducto(cat, p)),
       agregar,

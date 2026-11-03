@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="img/logo.png">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="mesero.css">
 </head>
 <!-- data-modo decide qué pantalla es: "cliente" (esta) o "mesero" (mesero.html) -->
 <body data-modo="cliente">
@@ -52,6 +53,10 @@
     </div>
     <p id="prodDescripcion" class="hoja__desc"></p>
     <div id="prodExtras"></div>
+    <label class="campo" data-solo="mesero">
+      <span>Cuenta (para separar la cuenta por persona)</span>
+      <select id="prodCuenta"></select>
+    </label>
     <label class="campo">
       <span>Nota para la cocina</span>
       <input id="prodNota" type="text" maxlength="120" placeholder="Ej: sin cebolla">
@@ -85,7 +90,15 @@
         </div>
       </fieldset>
 
-      <label class="campo" data-solo="mesero">
+      <fieldset class="campo" data-solo="mesero">
+        <legend>Tipo de pedido</legend>
+        <div class="opciones">
+          <label><input type="radio" name="tipoMesero" value="mesa" checked> Mesa</label>
+          <label><input type="radio" name="tipoMesero" value="llevar"> Para llevar</label>
+        </div>
+      </fieldset>
+
+      <label class="campo" id="campoMesaM" data-solo="mesero">
         <span>Número de mesa</span>
         <input id="fMesa" type="text" inputmode="numeric" maxlength="10">
       </label>
@@ -94,6 +107,19 @@
         <span id="etiquetaNombre">Tu nombre</span>
         <input id="fNombre" type="text" autocomplete="name" maxlength="60">
       </label>
+
+      <label class="campo" id="campoTelM" data-solo="mesero" hidden>
+        <span>Teléfono (opcional)</span>
+        <input id="fTelM" type="tel" inputmode="tel" maxlength="20">
+      </label>
+
+      <fieldset class="campo" id="campoPagoM" data-solo="mesero" hidden>
+        <legend>Forma de pago</legend>
+        <div class="opciones">
+          <label><input type="radio" name="pagoMesero" value="Efectivo" checked> Efectivo</label>
+          <label><input type="radio" name="pagoMesero" value="Transferencia"> Transferencia</label>
+        </div>
+      </fieldset>
 
       <label class="campo" data-solo="cliente">
         <span>Teléfono (WhatsApp)</span>

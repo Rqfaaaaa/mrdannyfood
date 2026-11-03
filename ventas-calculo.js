@@ -2,6 +2,8 @@
    (Así se puede probar por separado.) */
 
 // Pedidos que cuentan como venta: no cuentan los pendientes de pago ni los cancelados.
+import { pagoDe } from "./cuentas.js";
+
 export const CUENTAN = ["confirmado", "preparando", "listo", "entregado"];
 
 // Fecha desde la cual se piden los pedidos, en hora de Colombia (la medianoche de Bogotá es 05:00 UTC).
@@ -56,6 +58,7 @@ export function resumir(pedidos) {
     porModalidad: {},
     porCanal: { local: { cantidad: 0, total: 0 }, domicilio: { cantidad: 0, total: 0 } },
     porPago: {},
+    porMesero: {},
     porHora: Array(24).fill(0),
     productos: [],
     porDia: [],
@@ -71,7 +74,8 @@ export function resumir(pedidos) {
     const canal = resumen.porCanal[canalDe(p)];
     canal.cantidad += 1;
     canal.total += p.totalProductos;
-    sumar(resumen.porPago, p.pago, p.totalProductos);
+    sumar(resumen.porPago, pagoDe(p) || "Sin definir", p.totalProductos);
+    if (p.atendidoPor) sumar(resumen.porMesero, p.atendidoPor, p.totalProductos);
 
     const fecha = p.creadoEn?.toDate?.();
     if (fecha) {

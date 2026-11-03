@@ -2,7 +2,7 @@
    Cada pantalla dice qué roles puede usarla, por ejemplo:
    exigirSesion({ roles: ["caja", "dueno"], alEntrar, alSalir }) */
 
-import { iniciarSesion, cerrarSesion, alCambiarSesion, obtenerRol } from "./firebase.js";
+import { iniciarSesion, cerrarSesion, alCambiarSesion, obtenerPerfil } from "./firebase.js";
 import { $ } from "./utils.js";
 
 export function exigirSesion({ roles, alEntrar, alSalir }) {
@@ -43,12 +43,13 @@ export function exigirSesion({ roles, alEntrar, alSalir }) {
       return;
     }
 
-    let rol = null;
+    let perfil = null;
     try {
-      rol = await obtenerRol(usuario.uid);
+      perfil = await obtenerPerfil(usuario.uid);
     } catch (error) {
       console.error(error);
     }
+    const rol = perfil ? perfil.rol : null;
 
     if (!roles.includes(rol)) {
       // Entró con una cuenta válida pero sin permiso para esta pantalla: se cierra su sesión
@@ -60,6 +61,6 @@ export function exigirSesion({ roles, alEntrar, alSalir }) {
     }
 
     if (ventana.open) ventana.close();
-    alEntrar?.(usuario, rol);
+    alEntrar?.(usuario, rol, perfil);
   });
 }

@@ -20,7 +20,7 @@ service cloud.firestore {
       let d = request.resource.data;
       return d.keys().hasOnly(['numero', 'origen', 'modalidad', 'mesa', 'nombre', 'telefono',
                                'direccion', 'pago', 'pagaCon', 'items', 'totalProductos',
-                               'estado', 'creadoEn'])
+                               'estado', 'creadoEn', 'atendidoPor'])
         && d.keys().hasAll(['numero', 'origen', 'modalidad', 'nombre', 'pago', 'items',
                             'totalProductos', 'estado', 'creadoEn'])
         && d.items is list && d.items.size() > 0 && d.items.size() <= 40
@@ -29,6 +29,7 @@ service cloud.firestore {
         && (!('mesa' in d) || d.mesa.size() <= 10)
         && (!('telefono' in d) || d.telefono.size() <= 20)
         && (!('direccion' in d) || d.direccion.size() <= 160)
+        && (!('atendidoPor' in d) || d.atendidoPor.size() <= 60)
         && d.creadoEn == request.time;
     }
 
@@ -43,31 +44,55 @@ service cloud.firestore {
             || (d.pago == 'Efectivo' && d.estado == 'confirmado'));
     }
 
-    // Caja y dueño: pueden cambiar el estado y marcar una modificación como vista. Nada más.
+    // Caja, dueño y administrador: pueden cambiar el estado, marcar una modificación como vista
+    // y anotar cómo pagó el cliente (Efectivo o Transferencia). Nada más.
     function cambioDeCaja() {
       let d = request.resource.data;
       return tieneRol(['caja', 'dueno', 'admin'])
-        && d.diff(resource.data).affectedKeys().hasOnly(['estado', 'modificado'])
-        && (!('modificado' in d) || d.modificado is bool);
+        && d.diff(resource.data).affectedKeys().hasOnly(['estado', 'modificado', 'formaDePago'])
+        && (!('modificado' in d) || d.modificado is bool)
+        && (!('formaDePago' in d) || d.formaDePago in ['Efectivo', 'Transferencia']);
     }
 
-    // Mesero: puede cambiar los productos, la mesa y el nombre de un pedido DE MESA mientras
-    // sigue "confirmado" o "preparando", o cancelarlo. No puede tocar nada más
-    // (ni el estado "listo" o "entregado", ni los pagos, ni los pedidos a domicilio).
+    // Mesero: puede cambiar los productos, la mesa, el nombre y el teléfono de los pedidos QUE ÉL TOMÓ
+    // (mesa y para llevar) mientras estén "confirmado", "preparando" o "listo", o cancelarlos.
+    // Si el pedido estaba "listo", vuelve a "preparando". No puede tocar nada más
+    // (ni "entregado", ni los pagos, ni los pedidos a domicilio de los clientes).
     // Cada cambio deja el pedido marcado como "modificado" para que caja se entere.
     function cambioDeMesero() {
       let antes = resource.data;
       let despues = request.resource.data;
       return tieneRol(['mesero', 'dueno', 'admin'])
-        && antes.modalidad == 'mesa'
-        && antes.estado in ['confirmado', 'preparando']
-        && despues.diff(antes).affectedKeys().hasOnly(['items', 'totalProductos', 'mesa', 'nombre', 'estado', 'modificado'])
-        && despues.estado in [antes.estado, 'cancelado']
+        && antes.origen == 'mesero'
+        && antes.estado in ['confirmado', 'preparando', 'listo']
+        && despues.diff(antes).affectedKeys().hasOnly(['items', 'totalProductos', 'mesa', 'nombre', 'telefono', 'estado', 'modificado'])
+        && (despues.estado in [antes.estado, 'cancelado'] || (antes.estado == 'listo' && despues.estado == 'preparando'))
         && despues.modificado == true
         && despues.items is list && despues.items.size() > 0 && despues.items.size() <= 40
         && despues.totalProductos is number && despues.totalProductos > 0 && despues.totalProductos <= 3000000
-        && despues.mesa is string && despues.mesa.size() > 0 && despues.mesa.size() <= 10
+        && despues.mesa is string && despues.mesa.size() <= 10 && (antes.modalidad != 'mesa' || despues.mesa.size() > 0)
+        && (!('telefono' in despues) || despues.telefono.size() <= 20)
         && despues.nombre is string && despues.nombre.size() <= 60;
+    }
+
+    // Caja, dueño y administrador: pueden EDITAR un pedido (productos, cantidades, notas y datos del cliente)
+    // mientras no esté entregado ni cancelado. No pueden cambiar la forma de pago ni el tipo de pedido.
+    // Cada edición deja el pedido marcado como "modificado" para reimprimir la comanda.
+    function edicionDeCaja() {
+      let antes = resource.data;
+      let despues = request.resource.data;
+      return tieneRol(['caja', 'dueno', 'admin'])
+        && antes.estado in ['pendiente_pago', 'confirmado', 'preparando', 'listo']
+        && despues.diff(antes).affectedKeys().hasOnly(['items', 'totalProductos', 'mesa', 'nombre', 'telefono', 'direccion', 'pagaCon', 'estado', 'modificado'])
+        && (despues.estado == antes.estado || (antes.estado == 'listo' && despues.estado == 'preparando'))
+        && despues.modificado == true
+        && despues.items is list && despues.items.size() > 0 && despues.items.size() <= 40
+        && despues.totalProductos is number && despues.totalProductos > 0 && despues.totalProductos <= 3000000
+        && despues.nombre is string && despues.nombre.size() <= 60
+        && (!('mesa' in despues) || despues.mesa.size() <= 10)
+        && (!('telefono' in despues) || despues.telefono.size() <= 20)
+        && (!('direccion' in despues) || despues.direccion.size() <= 160)
+        && (!('pagaCon' in despues) || despues.pagaCon == null || despues.pagaCon is number);
     }
 
     match /pedidos/{pedidoId} {
@@ -78,7 +103,7 @@ service cloud.firestore {
       // Ver: mesero, caja y dueño (el mesero necesita seguir sus pedidos)
       allow read: if tieneRol(['mesero', 'caja', 'dueno', 'admin']);
 
-      allow update: if cambioDeCaja() || cambioDeMesero();
+      allow update: if cambioDeCaja() || cambioDeMesero() || edicionDeCaja();
       allow delete: if false;
     }
 

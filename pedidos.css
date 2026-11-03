@@ -31,3 +31,11 @@
 .ed-producto:hover:not(:disabled) { border-color: var(--amarillo); }
 .ed-producto:disabled { opacity: 0.45; text-decoration: line-through; cursor: default; }
 .ed .total-linea { margin: 1rem 0 0.6rem; }
+
+/* Cuenta impresa: una página por persona */
+@media print {
+  #ticket .t-linea { display: flex; justify-content: space-between; gap: 8px; }
+  #ticket .t-nota { margin-top: 8px; font-size: 11px; text-align: center; }
+  #ticket .t-pagina { break-after: page; }
+  #ticket .t-pagina:last-child { break-after: auto; }
+}

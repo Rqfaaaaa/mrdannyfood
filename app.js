@@ -12,7 +12,7 @@
    7. Inicio
    ===================================================================== */
 
-import { pesos, h, $, generarNumero, hora12, textoHorario, estaAbierto, cuandoAbrimos } from "./utils.js";
+import { pesos, h, $, generarNumero, hora12, textoHorario, estaAbierto, cuandoAbrimos, SIN_ADICIONALES_POR_DEFECTO } from "./utils.js";
 import { crearPedido, escucharPedidos, actualizarPedido, leerMenu } from "./firebase.js";
 import { exigirSesion } from "./acceso.js";
 
@@ -55,6 +55,8 @@ let enviando = false;
 let editando = null;         // pedido de mesa que el mesero está editando: { id, numero }
 let pedidosMesa = [];        // pedidos de mesa activos (solo mesero)
 let detener = null;          // función para dejar de escuchar pedidos
+let meseroNombre = "";       // nombre de quien atiende (sale de su perfil en la colección "personal")
+let cuentaActual = "1";      // cuenta (persona) a la que se asignan los productos que se agregan
 
 /* ---------- 3. Carrito ---------- */
 
@@ -70,10 +72,13 @@ function cargarCarrito() {
   } catch { carrito = []; }
 }
 
+const claveLinea = (id, extras, nota, cuenta) => [id, [...extras].sort().join("+"), nota.toLowerCase(), cuenta || ""].join("|");
+
 function agregarAlCarrito(prod, extras, nota, cantidad) {
   const precioExtras = extras.reduce((suma, e) => suma + e.precio, 0);
   const nombresExtras = extras.map((e) => e.nombre).sort();
-  const clave = [prod.id, nombresExtras.join("+"), nota.toLowerCase()].join("|");
+  const cuenta = MODO === "mesero" ? cuentaActual : undefined;
+  const clave = claveLinea(prod.id, nombresExtras, nota, cuenta);
   const existente = carrito.find((l) => l.clave === clave);
   if (existente) {
     existente.cantidad += cantidad;
@@ -82,6 +87,7 @@ function agregarAlCarrito(prod, extras, nota, cantidad) {
       clave, id: prod.id, nombre: prod.nombre,
       precioUnidad: prod.precio + precioExtras,
       extras: nombresExtras, nota, cantidad,
+      ...(cuenta ? { cuenta } : {}),
     });
   }
   actualizarCarrito();
@@ -97,6 +103,7 @@ function cambiarCantidad(clave, delta) {
 
 const itemsDelCarrito = () => carrito.map((l) => ({
   id: l.id, nombre: l.nombre, cantidad: l.cantidad, precioUnidad: l.precioUnidad, extras: l.extras, nota: l.nota,
+  ...(l.cuenta ? { cuenta: l.cuenta } : {}),
 }));
 
 const totalCarrito = () => carrito.reduce((s, l) => s + l.precioUnidad * l.cantidad, 0);
@@ -207,7 +214,11 @@ function dibujarPie() {
 
 function alTocarProducto(categoria, p) {
   // Al pedirlo, el producto lleva su nombre completo (ej. "Perro Mr. Danny")
-  const elegido = { ...p, nombre: nombreCompleto(categoria, p) };
+  const elegido = {
+    ...p,
+    nombre: nombreCompleto(categoria, p),
+    sinAdicionales: categoria.sinAdicionales ?? SIN_ADICIONALES_POR_DEFECTO.includes(categoria.id),
+  };
   if (CATEGORIAS_SIN_OPCIONES.includes(categoria.id)) {
     agregarAlCarrito(elegido, [], "", 1);
     return;
@@ -223,12 +234,13 @@ function abrirProducto(p) {
   $("prodNombre").textContent = p.nombre;
   $("prodDescripcion").textContent = p.descripcion || "";
   $("prodNota").value = "";
+  if (MODO === "mesero") $("prodCuenta").value = cuentaActual;
 
   const adicionales = datos.categorias.find((c) => c.id === CATEGORIA_ADICIONALES);
   const contenedor = $("prodExtras");
   contenedor.replaceChildren();
 
-  if (adicionales && adicionales.productos.some((x) => !x.agotado)) {
+  if (!p.sinAdicionales && adicionales && adicionales.productos.some((x) => !x.agotado)) {
     const lista = h("div", { class: "extras" }, h("h3", {}, "Adicionales"));
     for (const e of adicionales.productos.filter((x) => !x.agotado)) {
       const casilla = h("input", { type: "checkbox", id: "x-" + e.id });
@@ -258,6 +270,26 @@ function actualizarBotonAgregar() {
 
 /* ---------- 6. Ventana del carrito y envío del pedido ---------- */
 
+const CUENTAS = ["1", "2", "3", "4", "5", "6", "7", "8"];
+
+function opcionesDeCuenta() {
+  return CUENTAS.map((n) => h("option", { value: n }, "Cuenta " + n));
+}
+
+// Cambia la cuenta (persona) de un producto del carrito; si ya hay uno igual en esa cuenta, se juntan
+function selectorCuenta(l) {
+  const selector = h("select", { "aria-label": "Cuenta" }, opcionesDeCuenta());
+  selector.value = l.cuenta || "1";
+  selector.addEventListener("change", () => {
+    l.cuenta = selector.value;
+    l.clave = claveLinea(l.id, l.extras, l.nota, l.cuenta);
+    const otra = carrito.find((x) => x !== l && x.clave === l.clave);
+    if (otra) { otra.cantidad += l.cantidad; carrito = carrito.filter((x) => x !== l); }
+    actualizarCarrito();
+  });
+  return selector;
+}
+
 function dibujarCarrito() {
   const lista = $("carLista");
   lista.replaceChildren();
@@ -282,6 +314,7 @@ function dibujarCarrito() {
         h("div", { class: "linea__ctrl" },
           h("button", { type: "button", "aria-label": "Quitar uno", onclick: () => cambiarCantidad(l.clave, -1) }, "−"),
           h("button", { type: "button", "aria-label": "Agregar uno", onclick: () => cambiarCantidad(l.clave, 1) }, "+"),
+          MODO === "mesero" ? selectorCuenta(l) : null,
         ),
       ),
     );
@@ -315,6 +348,23 @@ function estadoInicial(modalidad, pago) {
   return pago === "Transferencia" ? "pendiente_pago" : "confirmado";
 }
 
+const tipoMesero = () => document.querySelector('input[name="tipoMesero"]:checked').value;
+
+// Muestra solo los campos que corresponden al tipo de pedido del mesero
+function ajustarCamposMesero() {
+  const llevar = tipoMesero() === "llevar";
+  $("campoMesaM").hidden = llevar;
+  $("campoTelM").hidden = !llevar;
+  $("campoPagoM").hidden = !llevar;
+  $("etiquetaNombre").textContent = llevar ? "Nombre del cliente" : "Nombre del cliente (opcional)";
+}
+
+function reiniciarFormulario() {
+  $("formPedido").reset();
+  if (MODO === "mesero") ajustarCamposMesero();
+  if (MODO === "cliente") ajustarCamposCliente();
+}
+
 function mostrarError(texto) {
   const el = $("error");
   el.hidden = !texto;
@@ -327,9 +377,15 @@ function armarPedido() {
   let pedido;
 
   if (MODO === "mesero") {
-    const mesa = valor("fMesa");
-    if (!mesa) { mostrarError("Escribe el número de mesa."); return null; }
-    pedido = { origen: "mesero", modalidad: "mesa", mesa, nombre, telefono: "", direccion: "", pago: "En mesa", pagaCon: null };
+    if (tipoMesero() === "llevar") {
+      if (!nombre) { mostrarError("Escribe el nombre del cliente."); return null; }
+      const pago = document.querySelector('input[name="pagoMesero"]:checked').value;
+      pedido = { origen: "mesero", modalidad: "llevar", mesa: "", nombre, telefono: valor("fTelM").replace(/\D/g, ""), direccion: "", pago, pagaCon: null, atendidoPor: meseroNombre };
+    } else {
+      const mesa = valor("fMesa");
+      if (!mesa) { mostrarError("Escribe el número de mesa."); return null; }
+      pedido = { origen: "mesero", modalidad: "mesa", mesa, nombre, telefono: "", direccion: "", pago: "En mesa", pagaCon: null, atendidoPor: meseroNombre };
+    }
   } else {
     const modalidad = modalidadElegida();
     const pago = pagoElegido();
@@ -346,7 +402,8 @@ function armarPedido() {
 
   pedido.items = itemsDelCarrito();
   pedido.totalProductos = totalCarrito();
-  pedido.estado = estadoInicial(pedido.modalidad, pedido.pago);
+  // Los pedidos que toma el mesero ya están confirmados: el cliente está presente
+  pedido.estado = pedido.origen === "mesero" ? "confirmado" : estadoInicial(pedido.modalidad, pedido.pago);
   pedido.numero = generarNumero();
   return pedido;
 }
@@ -406,7 +463,8 @@ async function enviarPedido(evento) {
     );
     return;
   }
-  if (modoEdicion && !valor("fMesa")) return mostrarError("Escribe el número de mesa.");
+  if (modoEdicion && editando.modalidad === "mesa" && !valor("fMesa")) return mostrarError("Escribe el número de mesa.");
+  if (modoEdicion && editando.modalidad === "llevar" && !valor("fNombre")) return mostrarError("Escribe el nombre del cliente.");
 
   const pedido = modoEdicion ? null : armarPedido();
   if (!modoEdicion && !pedido) return;
@@ -420,22 +478,25 @@ async function enviarPedido(evento) {
   try {
     if (modoEdicion) {
       const numero = editando.numero;
+      // Si el pedido ya estaba listo, vuelve a "en preparación" para que la cocina vea lo que cambió
+      const volvioACocina = editando.estado === "listo";
       await actualizarPedido(editando.id, {
         items: itemsDelCarrito(),
         totalProductos: totalCarrito(),
-        mesa: valor("fMesa"),
         nombre: valor("fNombre"),
+        ...(editando.modalidad === "mesa" ? { mesa: valor("fMesa") } : { telefono: valor("fTelM").replace(/\D/g, "") }),
+        ...(volvioACocina ? { estado: "preparando" } : {}),
       });
       salirDeEdicion();
       $("dlgCarrito").close();
-      mostrarMensaje(`Pedido #${numero} actualizado`, "Caja verá que fue modificado y recibirá un aviso.");
+      mostrarMensaje(`Pedido #${numero} actualizado`,
+        "Caja verá que fue modificado y recibirá un aviso." + (volvioACocina ? " Como ya estaba listo, volvió a «En preparación» para que la cocina lo vea." : ""));
     } else {
       await crearPedido(pedido);
       carrito = [];
       actualizarCarrito();
       $("dlgCarrito").close();
-      $("formPedido").reset();
-      if (MODO === "cliente") ajustarCamposCliente();
+      reiniciarFormulario();
       mostrarListo(pedido);
     }
   } catch (error) {
@@ -463,7 +524,9 @@ function mostrarListo(pedido) {
 
   if (MODO === "mesero") {
     titulo.textContent = `Comanda #${pedido.numero} enviada`;
-    texto.textContent = `Mesa ${pedido.mesa}. Ya aparece en la pantalla de pedidos.`;
+    texto.textContent = pedido.modalidad === "mesa"
+      ? `Mesa ${pedido.mesa}. Ya aparece en la pantalla de pedidos.`
+      : `Para llevar, a nombre de ${pedido.nombre}. Ya aparece en la pantalla de pedidos.`;
     $("dlgListo").showModal();
     return;
   }
@@ -500,7 +563,7 @@ function empezarAEscuchar() {
   if (detener) return;
   detener = escucharPedidos(
     (lista) => {
-      pedidosMesa = lista.filter((p) => p.modalidad === "mesa" && ["confirmado", "preparando", "listo"].includes(p.estado));
+      pedidosMesa = lista.filter((p) => p.origen === "mesero" && ["confirmado", "preparando", "listo"].includes(p.estado));
       $("cuentaPedidos").textContent = pedidosMesa.length;
       if ($("dlgMisPedidos").open) dibujarMisPedidos();
     },
@@ -528,7 +591,7 @@ function dibujarMisPedidos() {
       h("article", { class: "pedido pedido--" + p.estado },
         h("div", { class: "pedido__cabeza" },
           h("strong", { class: "pedido__numero" }, "#" + p.numero),
-          h("span", { class: "pedido__tipo" }, "Mesa " + p.mesa),
+          h("span", { class: "pedido__tipo" }, p.modalidad === "mesa" ? "Mesa " + p.mesa : "Para llevar"),
           h("span", { class: "etiqueta etiqueta--" + p.estado }, NOMBRE_ESTADO[p.estado]),
         ),
         p.nombre ? h("p", { class: "pedido__cliente" }, p.nombre) : null,
@@ -555,17 +618,21 @@ function empezarEdicion(p) {
   if (!editando && carrito.length > 0 &&
       !confirm(`Tienes productos sin enviar. ¿Reemplazarlos por los del pedido #${p.numero}?`)) return;
 
-  editando = { id: p.id, numero: p.numero };
+  editando = { id: p.id, numero: p.numero, estado: p.estado, modalidad: p.modalidad };
   carrito = p.items.map((i) => {
     const extras = i.extras || [];
     const nota = i.nota || "";
     const id = i.id || i.nombre;
     return {
-      clave: [id, [...extras].sort().join("+"), nota.toLowerCase()].join("|"),
+      clave: claveLinea(id, extras, nota, i.cuenta),
       id, nombre: i.nombre, precioUnidad: i.precioUnidad, extras, nota, cantidad: i.cantidad,
+      ...(i.cuenta ? { cuenta: i.cuenta } : {}),
     };
   });
-  $("fMesa").value = p.mesa;
+  document.querySelector(`input[name="tipoMesero"][value="${p.modalidad}"]`).checked = true;
+  ajustarCamposMesero();
+  $("fMesa").value = p.mesa || "";
+  $("fTelM").value = p.telefono || "";
   $("fNombre").value = p.nombre || "";
   $("dlgMisPedidos").close();
   mostrarModoEdicion();
@@ -581,12 +648,14 @@ function mostrarModoEdicion() {
     $("avisoEdicion").textContent = `Editando el pedido #${editando.numero}. Cambia lo que necesites y guarda: caja verá que fue modificado.`;
   }
   $("botonEnviar").textContent = activo ? "Guardar cambios" : "Enviar a caja";
+  // Mientras se edita, el tipo de pedido no se puede cambiar
+  document.querySelectorAll('input[name="tipoMesero"]').forEach((r) => { r.disabled = activo; });
 }
 
 function salirDeEdicion() {
   editando = null;
   carrito = [];
-  $("formPedido").reset();
+  reiniciarFormulario();
   mostrarModoEdicion();
   actualizarCarrito();
 }
@@ -617,6 +686,10 @@ function conectarEventos() {
     if (cantidadProducto > 1) { cantidadProducto--; actualizarBotonAgregar(); }
   });
   $("prodMas").addEventListener("click", () => { cantidadProducto++; actualizarBotonAgregar(); });
+  if (MODO === "mesero") {
+    $("prodCuenta").addEventListener("change", () => { cuentaActual = $("prodCuenta").value; });
+    document.querySelectorAll('input[name="tipoMesero"]').forEach((r) => r.addEventListener("change", ajustarCamposMesero));
+  }
 
   $("prodAgregar").addEventListener("click", () => {
     agregarAlCarrito(producto, [...extrasElegidos], $("prodNota").value.trim(), cantidadProducto);
@@ -658,11 +731,14 @@ async function cargarMenu() {
 
 async function iniciar() {
   if (MODO === "mesero") {
-    $("etiquetaNombre").textContent = "Nombre del cliente (opcional)";
+    ajustarCamposMesero();
+    $("prodCuenta").replaceChildren(...opcionesDeCuenta());
     $("botonEnviar").textContent = "Enviar a caja";
     exigirSesion({
       roles: ["mesero", "dueno", "admin"],
-      alEntrar: (usuario, rol) => {
+      alEntrar: (usuario, rol, perfil) => {
+        // El nombre que sale en caja y en las ventas: el de su perfil, o la primera parte de su correo
+        meseroNombre = String((perfil && perfil.nombre) || (usuario.email || "").split("@")[0] || "").slice(0, 60);
         $("enlaceInicio").hidden = !["dueno", "admin"].includes(rol); // solo dueño y admin pasan a otras pantallas
         empezarAEscuchar();
       },

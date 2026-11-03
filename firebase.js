@@ -86,6 +86,17 @@ export async function obtenerRol(uid) {
 }
 
 
+// Perfil completo de la persona del personal: { rol, nombre }. El nombre es opcional.
+export async function obtenerPerfil(uid) {
+  const documento = await getDoc(doc(db, "personal", uid));
+  return documento.exists() ? documento.data() : null;
+}
+
+// Caja marca cómo pagó el cliente (Efectivo o Transferencia)
+export function marcarPago(idPedido, formaDePago) {
+  return updateDoc(doc(db, "pedidos", idPedido), { formaDePago });
+}
+
 export const iniciarSesion = (correo, clave) => signInWithEmailAndPassword(auth, correo, clave);
 export const cerrarSesion = () => signOut(auth);
 export const alCambiarSesion = (funcion) => onAuthStateChanged(auth, funcion);

@@ -116,3 +116,7 @@ export function nombreCompleto(categoria, p) {
   const prefijo = categoria.prefijo ?? PREFIJOS_POR_DEFECTO[categoria.id];
   return prefijo ? `${prefijo} ${p.nombre}` : p.nombre;
 }
+
+// Categorías en las que NO se ofrecen adicionales (ej. el chuzo desgranado ya viene armado).
+// Se puede cambiar por categoría desde el editor del menú (campo "sinAdicionales").
+export const SIN_ADICIONALES_POR_DEFECTO = ["chuzo-desgranado"];

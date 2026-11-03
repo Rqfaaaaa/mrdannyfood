@@ -1,0 +1,9 @@
+/* Mesero: cuentas por persona y pedidos para llevar. Va aparte para no depender de la versión de styles.css. */
+
+.campo select, .linea__ctrl select {
+  padding: 0.5rem 0.6rem; background: var(--fondo); color: var(--texto);
+  border: 1px solid var(--linea); border-radius: 0.5rem; font: inherit;
+}
+.campo select { width: 100%; }
+.linea__ctrl select { margin-left: auto; }
+.pedido__cuenta { margin: 0.6rem 0 0.1rem; font-size: 0.85rem; font-weight: 700; color: var(--amarillo); }

@@ -13,7 +13,7 @@ const PERIODOS = [
   { id: "semana", nombre: "Últimos 7 días" },
   { id: "mes", nombre: "Este mes" },
 ];
-const NOMBRE_PAGO = { "En mesa": "Mesa (se paga en el local)" };
+const NOMBRE_PAGO = { "Sin definir": "Sin definir (caja aún no marcó cómo pagó)" };
 
 let periodo = "hoy";
 let detener = null;
@@ -150,6 +150,13 @@ function dibujar(pedidos) {
     pagos.map(([clave, v]) => filaBarra(`${NOMBRE_PAGO[clave] || clave} · ${v.cantidad} pedidos`, v.total, porcentaje(v.total, r.total), { verde: clave === "Transferencia" })),
   );
 
+  /* --- Por mesero (solo si hay pedidos con nombre de quien atendió) --- */
+  const meseros = Object.entries(r.porMesero).sort((a, b) => b[1].total - a[1].total);
+  const porMesero = meseros.length === 0 ? null : h("section", { class: "v-bloque" },
+    h("h2", {}, "Ventas por mesero"),
+    meseros.map(([nombre, v]) => filaBarra(`${nombre} · ${v.cantidad} pedidos`, v.total, porcentaje(v.total, r.total))),
+  );
+
   /* --- Por hora --- */
   const conVentas = r.porHora.map((v, i) => (v > 0 ? i : -1)).filter((i) => i >= 0);
   const desdeHora = Math.min(...conVentas);
@@ -190,7 +197,7 @@ function dibujar(pedidos) {
     `Se cuentan los pedidos confirmados y siguientes, sin el valor del domicilio ni propinas. Fuera de la cuenta: ${r.pendientes} pendientes de pago y ${r.cancelados} cancelados. “En el local” incluye mesa y para llevar.`);
 
   // replaceChildren escribe "null" si recibe null, por eso se filtran los vacíos
-  $("contenido").replaceChildren(...[total, canales, formasDePago, porHora, productos, porDia, nota].filter(Boolean));
+  $("contenido").replaceChildren(...[total, canales, formasDePago, porMesero, porHora, productos, porDia, nota].filter(Boolean));
   animar = false;
 }
 
